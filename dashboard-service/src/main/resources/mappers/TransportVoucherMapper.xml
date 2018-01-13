@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.vouchers.transport.TransportVoucherMapper">
+
+    <resultMap id="transportVoucherList" type="com.spsolutions.grand.dao.TransportVoucherDao">
+        <result column="CUSTOMER_NAME" jdbcType="BIGINT" property="customerName"/>
+        <result column="DRIVER_NAME" jdbcType="VARCHAR" property="driverName"/>
+        <result column="PICKUP_LOCATION" jdbcType="VARCHAR" property="pickupLocation"/>
+        <result column="FROM_DATE" jdbcType="VARCHAR" property="eventFromDate"/>
+        <result column="TO_DATE" jdbcType="VARCHAR" property="eventToDate"/>
+        <result column="DRIVER_ALT" jdbcType="VARCHAR" property="thumbnail"/>
+        <result column="DRIVER_EXT" jdbcType="VARCHAR" property="ext"/>
+        <result column="CUSTOMER_PIC" jdbcType="VARCHAR" property="customerProfilePic"/>
+        <result column="VOUCHER_NUMBER" jdbcType="VARCHAR" property="voucherNumber"/>
+        <result column="PAX" jdbcType="VARCHAR" property="pax"/>
+        <result column="LAT" jdbcType="VARCHAR" property="lan"/>
+        <result column="LNG" jdbcType="VARCHAR" property="lon"/>
+        <result column="PICKUP_TIME" jdbcType="VARCHAR" property="pickUpTime"/>
+    </resultMap>
+    <select id="getTransportVoucherList" resultMap="transportVoucherList">
+        SELECT CONCAT(CUSTOMER.FIRSTNAME,' ',CUSTOMER.LASTNAME) AS CUSTOMER_NAME,
+        EC.START_DATE AS FROM_DATE,
+        EC.END_DATE AS TO_DATE,
+        MD.FULL_NAME AS DRIVER_NAME,
+        GL.ADDRESS AS PICKUP_LOCATION,
+        GL.LAT , GL.LNG,
+        (SELECT ED.ALT_PATH FROM EDGE_DOCUMENT ED WHERE ED.ID=MD.FK_DOCUMENT) AS DRIVER_ALT,
+        (SELECT ED.EXT FROM EDGE_DOCUMENT ED WHERE ED.ID=MD.FK_DOCUMENT) AS DRIVER_EXT,
+        CUSTOMER.PROFILE_PIC AS CUSTOMER_PIC,
+        V.VOUCHER_NUMBER AS VOUCHER_NUMBER,
+        QE.PAX, QEWS.PICKUP_TIME
+        FROM QUOTE_ENQUIRY_DRIVER_ALLOCATION QEDA
+        LEFT JOIN VOUCHER V ON V.ID = QEDA.FK_VOUCHER
+        LEFT JOIN MASTER_DRIVER MD ON MD.ID = QEDA.FK_DRIVER
+        LEFT JOIN QUOTE_ENQUIRY QE ON QE.ID = QEDA.FK_ENQUIRY
+        LEFT JOIN QUOTE_ENQUIRY_WALKTHROUGH_SETUP QEWS ON QEWS.FK_QUOTE_ENQUIRY = QE.ID
+        LEFT JOIN EDGE_CALENDAR EC ON EC.ID = QEWS.FK_CALENDAR
+        LEFT JOIN EDGE_GOOGLE_LOCATION GL ON GL.ID = QEWS.FK_GOOGLE_LOCATION
+        LEFT JOIN MASTER_CUSTOMER CUSTOMER ON CUSTOMER.ID = QE.FK_CUSTOMER
+        WHERE QEDA.ACTIVE = 1 AND QEWS.IS_ACTIVATED = 1 AND V.ACTIVE = 1
+    </select>
+
+</mapper>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.AuthUserMapper">
+
+    <resultMap id="userDomain" type="com.spsolutions.grand.domain.User">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="USERNAME" jdbcType="VARCHAR" property="username"/>
+        <result column="FIRSTNAME" jdbcType="VARCHAR" property="firstname"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="PASSWORD" jdbcType="VARCHAR" property="password"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+
+    </resultMap>
+    <select id="findByUsername" parameterType="java.lang.String" resultMap="userDomain">
+
+        SELECT * FROM USER U WHERE U.USERNAME = #{TYPE} AND U.IS_ACTIVATED = 1
+
+    </select>
+    <select id="findByEmail" parameterType="java.lang.String" resultMap="userDomain">
+
+        SELECT * FROM USER U WHERE U.EMAIL = #{TYPE} AND IS_REGISTERED = 1
+
+    </select>
+</mapper>

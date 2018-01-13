@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.roster.EmployeeTypeMapper">
+
+    <insert id="saveEmployeeTypeMapper"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+
+        INSERT INTO ROSTER_EMPLOYEE_TYPE (EMP_TYPE, CREATED_BY, CREATED_DATE, IS_ACTIVATED)
+        VALUES ( #{employeeType}, #{createdBy}, #{createdDate}, 1);
+
+    </insert>
+
+    <resultMap id="employeeTypeList" type="com.spsolutions.grand.domain.roster.EmployeeType">
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="EMP_TYPE" jdbcType="VARCHAR" property="employeeType"/>
+        <result column="ICON" jdbcType="VARCHAR" property="icon"/>
+    </resultMap>
+
+    <select id="findAllEmployeeType" resultMap="employeeTypeList">
+        SELECT * FROM ROSTER_EMPLOYEE_TYPE WHERE IS_ACTIVATED = 1
+    </select>
+
+
+</mapper>

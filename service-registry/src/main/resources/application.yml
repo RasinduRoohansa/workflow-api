@@ -1,0 +1,14 @@
+
+# Service Registry Port
+server:
+  port: 9001
+  application:
+    name: service-registry
+
+# Configure this Discovery Server
+eureka:
+  client:  # Not a client, don't register with yourself
+    registerWithEureka: false
+    fetchRegistry: false
+    service-url:
+      defaultZone: http://localhost:9001/eureka

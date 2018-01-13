@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.master.EventTypeMapper">
+    <insert id="saveEventType" parameterType="java.util.Map">
+        INSERT INTO MASTER_EVENT_TYPE (IS_ACTIVATED, EVENT_TYPE, CODE, DESCRIPTION, CREATED_BY, FK_DOCUMENT)
+        VALUES (1, #{eventType}, #{code}, #{description}, #{createdBy}, #{fkDocument});
+    </insert>
+
+    <resultMap id="eventTypeMap" type="com.spsolutions.grand.domain.master.EventType">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="EVENT_TYPE" jdbcType="VARCHAR" property="eventType"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullName"/>
+        <result column="FK_DOCUMENT" jdbcType="VARCHAR" property="fkDocument"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="thumbnail"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+
+    </resultMap>
+    <select id="findAllEventType" resultMap="eventTypeMap">
+
+        SELECT MET.*, ED.ALT_PATH, ED.EXT,
+         (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MET.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME, MET.FK_DOCUMENT
+        FROM MASTER_EVENT_TYPE MET
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MET.FK_DOCUMENT
+
+    </select>
+    <select id="getActiveEventType" resultMap="eventTypeMap">
+
+        SELECT MET.*, ED.ALT_PATH, ED.EXT,
+         (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MET.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME, MET.FK_DOCUMENT
+        FROM MASTER_EVENT_TYPE MET
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MET.FK_DOCUMENT
+        WHERE MET.IS_ACTIVATED = 1
+
+    </select>
+
+    <update id="updateEventType" parameterType="java.util.Map">
+        UPDATE MASTER_EVENT_TYPE SET IS_ACTIVATED = #{activated}, EVENT_TYPE = #{eventType},
+        CODE = #{code}, DESCRIPTION = #{description}, FK_DOCUMENT = #{fkDocument} WHERE ID = #{id}
+    </update>
+</mapper>

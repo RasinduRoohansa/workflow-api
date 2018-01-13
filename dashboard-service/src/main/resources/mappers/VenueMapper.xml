@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.master.VenueMapper">
+    <insert id="saveVenue" parameterType="java.util.Map">
+        INSERT INTO MASTER_VENUE (VENUE_NAME, STREET_ONE, STREET_TWO, COUNTRY, CITY, STATE, WEB, PHONE, EMAIL, IS_ACTIVATED, CREATED_BY, DESCRIPTION)
+        VALUES (#{venueName}, #{streetOne}, #{streetTwo}, #{country}, #{city}, #{state}, #{web}, #{phone}, #{email}, 1, #{createdBy}, #{description})
+    </insert>
+    <insert id="saveVenueSpace" parameterType="java.util.Map">
+        INSERT INTO MASTER_VENUE_SPACE (NAME, DESCRIPTION, MAX_CAPACITY, IS_ACTIVATED, CREATED_BY, FK_MASTER_VENUE, FK_DOCUMENT,MIN_PAX)
+        VALUES (#{name}, #{description}, #{max}, 1, #{createdBy}, #{fkVenue}, #{fkDocument}, #{min});
+    </insert>
+    <insert id="updateVenueSpace" parameterType="java.util.Map">
+        UPDATE MASTER_VENUE_SPACE SET NAME=#{name}, DESCRIPTION=#{description}, MAX_CAPACITY=#{max}, CREATED_BY=#{createdBy}, CREATED_DATE=CURRENT_TIMESTAMP ,
+        MIN_PAX=#{min},
+        FK_MASTER_VENUE=#{fkVenue} , FK_DOCUMENT=#{fkDocument} WHERE (ID=#{id});
+    </insert>
+    <insert id="saveFacility" parameterType="java.util.Map">
+        INSERT INTO MASTER_VENUE_SPACE_FACILITY (FK_VENUE_SPACE, FACILITY, CREATED_BY)
+        VALUES (#{fkVenueSpace}, #{facility}, #{createdBy});
+    </insert>
+    <insert id="activateVenueSpace" parameterType="java.lang.Long">
+        UPDATE MASTER_VENUE_SPACE SET IS_ACTIVATED = 1 WHERE (ID=#{id});
+    </insert>
+    <insert id="deactivateVenueSpace" parameterType="java.lang.Long">
+        UPDATE MASTER_VENUE_SPACE SET IS_ACTIVATED = 0 WHERE (ID=#{id});
+    </insert>
+
+    <resultMap id="venueMap" type="com.spsolutions.grand.domain.master.Venue">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="VENUE_NAME" jdbcType="VARCHAR" property="venueName"/>
+        <result column="STREET_ONE" jdbcType="VARCHAR" property="streetOne"/>
+        <result column="STREET_TWO" jdbcType="VARCHAR" property="streetTwo"/>
+        <result column="COUNTRY" jdbcType="VARCHAR" property="country"/>
+        <result column="CITY" jdbcType="VARCHAR" property="city"/>
+        <result column="STATE" jdbcType="VARCHAR" property="state"/>
+        <result column="WEB" jdbcType="VARCHAR" property="web"/>
+        <result column="PHONE" jdbcType="VARCHAR" property="phone"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+
+    </resultMap>
+    <select id="findAllVenue" resultMap="venueMap">
+
+        SELECT MV.*,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MV.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_VENUE MV ORDER BY ID DESC
+
+    </select>
+    <select id="findVenue" resultMap="venueMap" parameterType="java.lang.Long">
+
+        SELECT MV.*,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MV.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_VENUE MV WHERE MV.ID = #{TYPE} ORDER BY ID DESC
+
+    </select>
+
+
+    <resultMap id="venueSpaceMap" type="com.spsolutions.grand.domain.master.VenueSpace">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="MAX_CAPACITY" jdbcType="INTEGER" property="max"/>
+        <result column="MIN_PAX" jdbcType="INTEGER" property="min"/>
+        <result column="FK_MASTER_VENUE" jdbcType="BIGINT" property="fkVenue"/>
+        <result column="FK_DOCUMENT" jdbcType="BIGINT" property="fkDocument"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="thumbnail"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+
+
+    </resultMap>
+    <select id="findVenueSpace" resultMap="venueSpaceMap" parameterType="java.lang.Long">
+
+        SELECT MVS.*, ED.ALT_PATH, ED.EXT,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MVS.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_VENUE_SPACE MVS
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MVS.FK_DOCUMENT WHERE MVS.FK_MASTER_VENUE = #{TYPE} ORDER BY MVS.CREATED_DATE DESC
+
+    </select>
+
+    <resultMap id="venueSingleSpaceMap" type="com.spsolutions.grand.dao.VenueSpacesDao">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="MAX_CAPACITY" jdbcType="INTEGER" property="max"/>
+        <result column="FK_MASTER_VENUE" jdbcType="BIGINT" property="fkVenue"/>
+        <result column="FK_DOCUMENT" jdbcType="BIGINT" property="fkDocument"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+
+    </resultMap>
+    <select id="findSpaceDetail" resultMap="venueSingleSpaceMap" parameterType="java.lang.Long">
+
+        SELECT MVS.*,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MVS.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_VENUE_SPACE MVS WHERE MVS.ID = #{TYPE}
+
+    </select>
+
+
+    <resultMap id="facilityMap" type="com.spsolutions.grand.domain.Facility">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_VENUE_SPACE" jdbcType="BIGINT" property="fkVenueSpace"/>
+        <result column="FACILITY" jdbcType="VARCHAR" property="facility"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+
+    </resultMap>
+    <select id="findFacility" resultMap="facilityMap" parameterType="java.lang.Long">
+
+        SELECT MVSF.*,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MVSF.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_VENUE_SPACE_FACILITY MVSF WHERE MVSF.FK_VENUE_SPACE = #{TYPE} AND MVSF.IS_ACTIVATED = 1;
+
+    </select>
+
+</mapper>

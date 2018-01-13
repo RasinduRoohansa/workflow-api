@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.master.CheckListMapper">
+    <!--<insert id="createActLog"-->
+            <!--useGeneratedKeys="true"-->
+            <!--keyProperty="id"-->
+            <!--keyColumn="ID"-->
+            <!--parameterType="java.util.Map">-->
+        <!--INSERT INTO ACT_LOG_QUOTE_ENQUIRY (LOG_TYPE, DESCRIPTION, CREATED_BY, FK_QUOTE_ENQUIRY)-->
+        <!--VALUES (#{logType}, #{description}, #{createdBy}, #{fkQuoteEnquiry});-->
+    <!--</insert>-->
+    <resultMap id="checkListTemplateMap" type="com.spsolutions.grand.domain.master.CheckListTemplate">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_EVENT_TYPE" jdbcType="BIGINT" property="fkEventType"/>
+        <result column="TEMPLATE_NAME" jdbcType="VARCHAR" property="templateName"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+
+    </resultMap>
+    <select id="findCheckListTemplateByEventType" resultMap="checkListTemplateMap" parameterType="java.lang.Long">
+
+        SELECT MCT.* FROM MASTER_CHECKLIST_TEMPLATE MCT
+        WHERE MCT.IS_ACTIVATED = 1
+
+    </select>
+
+    <resultMap id="checkListTemplateItemMap" type="com.spsolutions.grand.domain.master.CheckListTemplateItem">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_MASTER_CHECKLIST" jdbcType="BIGINT" property="fkMasterCheckList"/>
+        <result column="ITEM_NAME" jdbcType="VARCHAR" property="itemName"/>
+        <result column="IS_SHEDULED" jdbcType="BIT" property="sheduled"/>
+        <result column="SHEDULE_TYPE" jdbcType="VARCHAR" property="sheduleType"/>
+        <result column="SHEDULE_MINUTE" jdbcType="INTEGER" property="sheduleMinute"/>
+        <result column="SHEDULE_TIME" jdbcType="TIMESTAMP" property="sheduleTime"/>
+
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+
+    </resultMap>
+    <select id="findCheckListItemByTemplateId" resultMap="checkListTemplateItemMap" parameterType="java.lang.Long">
+
+        SELECT MCTI.* FROM MASTER_CHECKLIST_TEMPLATE_ITEM MCTI
+        WHERE MCTI.FK_MASTER_CHECKLIST = #{TYPE} AND MCTI.IS_ACTIVATED = 1
+
+    </select>
+</mapper>

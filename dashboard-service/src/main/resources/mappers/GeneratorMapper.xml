@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.mapperutil.GeneratorMapper">
+
+    <resultMap id="systemIdMap" type="com.spsolutions.grand.domain.SystemIDGenerator">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="TYPE" jdbcType="VARCHAR" property="type"/>
+        <result column="NUMBER" jdbcType="INTEGER" property="number"/>
+        <result column="CHARACTOR" jdbcType="VARCHAR" property="character"/>
+
+    </resultMap>
+    <select id="findSystemIDGenerator" resultMap="systemIdMap">
+
+        SELECT SIG.* FROM SYSTEM_ID_GENERATOR SIG WHERE SIG.TYPE = #{TYPE} LIMIT 1
+
+    </select>
+
+    <update id="updateSystemIDGenerator" parameterType="java.util.Map">
+
+        UPDATE SYSTEM_ID_GENERATOR USIGE SET USIGE.NUMBER = (USIGE.NUMBER + 1) WHERE USIGE.ID = #{id}
+
+    </update>
+</mapper>

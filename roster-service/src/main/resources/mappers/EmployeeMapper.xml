@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.roster.EmployeeMapper">
+
+
+    <insert id="saveEmployee" useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+
+          INSERT INTO MASTER_EMPLOYEE
+          (FULL_NAME, CODE, STREET_ONE, STREET_TWO, CITY, STATE, ZIP_CODE, COUNTRY, TELEPHONE_ONE,FK_EMPLOYEE_TYPE_ID, MOBILE, FAX,IS_ACTIVATED, EMAIL,CREATED_DATE,FK_DOCUMENT,CREATED_BY)
+          VALUES
+          (#{fullName}, #{code}, #{streetOne}, #{streetTwo}, #{city}, #{state}, #{zipCode}, #{country}, #{telephoneOne},#{fkEmpType}, #{mobile}, #{fax}, 1, #{email},#{createdDate},#{fkDocument},#{createdBy});
+
+      </insert>
+
+    <update id="updateEmployee" parameterType="java.util.Map"  >
+        UPDATE MASTER_EMPLOYEE SET IS_ACTIVATED = #{activated}, FULL_NAME = #{fullName},
+        CODE = #{code}, STREET_ONE = #{streetOne}, CITY = #{city},STATE=#{state},ZIP_CODE=#{zipCode},COUNTRY=#{country},TELEPHONE_ONE=#{telephoneOne},
+        FK_EMPLOYEE_TYPE_ID =#{fkEmpType}, MOBILE=#{mobile}, FAX=#{fax},EMAIL=#{email}
+        WHERE ID = #{id}
+    </update>
+
+    <resultMap id="employeeList" type="com.spsolutions.grand.domain.roster.EmployeeMaster">
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FULL_NAME" jdbcType="VARCHAR" property="fullName"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="STREET_ONE" jdbcType="VARCHAR" property="streetOne"/>
+        <result column="STREET_TWO" jdbcType="VARCHAR" property="streetTwo"/>
+        <result column="CITY" jdbcType="VARCHAR" property="city"/>
+        <result column="STATE" jdbcType="VARCHAR" property="state"/>
+        <result column="ZIP_CODE" jdbcType="VARCHAR" property="zipCode"/>
+        <result column="COUNTRY" jdbcType="VARCHAR" property="country"/>
+        <result column="TELEPHONE_ONE" jdbcType="VARCHAR" property="telephoneOne"/>
+        <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+        <result column="FAX" jdbcType="VARCHAR" property="fax"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="thumbnail"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+        <result column="FK_DOCUMENT" jdbcType="VARCHAR" property="fkDocument"/>
+        <result column="CREATED_USER" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="VARCHAR" property="createdDate"/>
+        <result column="FK_EMPLOYEE_TYPE_ID" jdbcType="VARCHAR" property="fkEmpType"/>
+    </resultMap>
+
+    <select id="findAllActiveEmployees" resultMap="employeeList">
+        SELECT *,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = EMPLOYEE.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_EMPLOYEE EMPLOYEE
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = EMPLOYEE.FK_DOCUMENT
+        WHERE EMPLOYEE.IS_ACTIVATED = 1 ORDER BY EMPLOYEE.FULL_NAME ASC
+    </select>
+
+    <select id="findAllInActiveEmployees" resultMap="employeeList">
+        SELECT *,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = EMPLOYEE.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_EMPLOYEE EMPLOYEE
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = EMPLOYEE.FK_DOCUMENT
+        WHERE EMPLOYEE.IS_ACTIVATED = 0 ORDER BY EMPLOYEE.FULL_NAME ASC
+    </select>
+
+
+    <select id="findActiveEmployeeById" resultMap="employeeList" parameterType="java.lang.Long">
+        SELECT *,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = EMPLOYEE.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_EMPLOYEE EMPLOYEE
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = EMPLOYEE.FK_DOCUMENT
+        WHERE EMPLOYEE.ID = #{id}
+    </select>
+
+    <select id="filterEmployee" resultMap="employeeList" parameterType="java.lang.String">
+        <bind name="keyword" value="'%' + _parameter + '%'" />
+        SELECT * ,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = EMPLOYEE.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_EMPLOYEE EMPLOYEE
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = EMPLOYEE.FK_DOCUMENT
+        WHERE EMPLOYEE.FULL_NAME LIKE #{keyword} OR EMPLOYEE.CODE LIKE #{keyword} OR EMPLOYEE.STREET_ONE LIKE #{keyword} OR EMPLOYEE.STREET_TWO LIKE #{keyword}
+        OR EMPLOYEE.CITY LIKE #{keyword} OR EMPLOYEE.STATE LIKE #{keyword} OR EMPLOYEE.ZIP_CODE LIKE #{keyword} OR EMPLOYEE.COUNTRY LIKE #{keyword} OR EMPLOYEE.TELEPHONE_ONE LIKE #{keyword}
+        OR EMPLOYEE.FK_EMPLOYEE_TYPE_ID LIKE #{keyword} OR EMPLOYEE.MOBILE LIKE #{keyword} OR EMPLOYEE.FAX LIKE #{keyword} OR EMPLOYEE.EMAIL LIKE #{keyword} OR EMPLOYEE.CREATED_DATE LIKE #{keyword}
+        OR EMPLOYEE.FK_DOCUMENT LIKE #{keyword} OR EMPLOYEE.CREATED_BY  LIKE #{keyword}
+        AND EMPLOYEE.IS_ACTIVATED = 1 
+    </select>
+
+
+
+</mapper>

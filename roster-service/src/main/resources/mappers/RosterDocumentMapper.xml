@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.DocumentMapper">
+    <insert id="saveDocument"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO EDGE_DOCUMENT (FILE_NAME, FILE_PATH, FILE_SIZE_BYTES, CREATED_BY, IS_ACTIVATED, EXT, ALT_PATH)
+        VALUES (#{fileName}, #{filePath}, #{fileSizeBytes}, #{createdBy}, 1, #{ext}, #{altPath});
+    </insert>
+    <insert id="saveImageForVenueSpace"
+            parameterType="java.util.Map">
+        INSERT INTO MAPPER_VENUE_SPACE_DOCUMENT (FK_DOCUMENT, FK_VENUE_SPACE)
+        VALUES (#{id}, #{fkId});
+    </insert>
+    <insert id="saveImageForPackages"
+            parameterType="java.util.Map">
+        INSERT INTO MAPPER_PACKAGE_DOCUMENT (FK_DOCUMENT, FK_PACKAGE)
+        VALUES (#{id}, #{fkId});
+    </insert>
+
+    <resultMap id="documentMap" type="com.spsolutions.grand.domain.EdgeDocument">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FILE_PATH" jdbcType="VARCHAR" property="filePath"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="altPath"/>
+        <result column="FILE_NAME" jdbcType="VARCHAR" property="fileName"/>
+        <result column="FILE_SIZE_BYTES" jdbcType="BIGINT" property="fileSizeBytes"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+
+    </resultMap>
+    <select id="findImage" resultMap="documentMap" parameterType="java.lang.Long">
+
+        SELECT ED.*
+        FROM EDGE_DOCUMENT ED
+        WHERE ED.ID = #{TYPE} AND ED.IS_ACTIVATED = 1
+
+    </select>
+    <select id="findVenueSpaceImages" resultMap="documentMap" parameterType="java.lang.Long">
+
+        SELECT ED.*
+        FROM MAPPER_VENUE_SPACE_DOCUMENT MVSD,
+        EDGE_DOCUMENT ED
+        WHERE MVSD.FK_DOCUMENT = ED.ID AND MVSD.FK_VENUE_SPACE = #{TYPE} AND ED.IS_ACTIVATED = 1
+
+    </select>
+    <select id="findPackageImages" resultMap="documentMap" parameterType="java.lang.Long">
+
+        SELECT ED.*
+        FROM MAPPER_PACKAGE_DOCUMENT MPD,
+        EDGE_DOCUMENT ED
+        WHERE MPD.FK_DOCUMENT = ED.ID AND MPD.FK_PACKAGE = #{TYPE} AND ED.IS_ACTIVATED = 1
+
+    </select>
+</mapper>

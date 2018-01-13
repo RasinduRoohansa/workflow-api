@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.master.DriverMapper">
+    <insert id="saveDriver" parameterType="java.util.Map">
+          INSERT INTO MASTER_DRIVER
+          (FULL_NAME, CODE, STREET_ONE, STREET_TWO, CITY, STATE, ZIP_CODE, COUNTRY, TELEPHONE_ONE, MOBILE, FAX,IS_ACTIVATED, EMAIL,CREATED_DATE,FK_DOCUMENT,CREATED_BY)
+          VALUES
+          (#{fullName}, #{code}, #{streetOne}, #{streetTwo}, #{city}, #{state}, #{zipCode}, #{country}, #{telephoneOne}, #{mobile}, #{fax}, 1, #{email},#{createdDate},#{fkDocument},#{createdBy});
+    </insert>
+
+    <update id="updateDriver" parameterType="java.util.Map">
+        UPDATE MASTER_DRIVER SET IS_ACTIVATED = #{activated}, FULL_NAME = #{fullName},
+        CODE = #{code}, STREET_ONE = #{streetOne}, CITY = #{city},STATE=#{state},ZIP_CODE=#{zipCode},COUNTRY=#{country},TELEPHONE_ONE=#{telephoneOne},
+        MOBILE=#{mobile}, FAX=#{fax},EMAIL=#{email}
+        WHERE ID = #{id}
+    </update>
+
+    <resultMap id="driverList" type="com.spsolutions.grand.domain.master.Driver">
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FULL_NAME" jdbcType="VARCHAR" property="fullName"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="STREET_ONE" jdbcType="VARCHAR" property="streetOne"/>
+        <result column="STREET_TWO" jdbcType="VARCHAR" property="streetTwo"/>
+        <result column="CITY" jdbcType="VARCHAR" property="city"/>
+        <result column="STATE" jdbcType="VARCHAR" property="state"/>
+        <result column="ZIP_CODE" jdbcType="VARCHAR" property="zipCode"/>
+        <result column="COUNTRY" jdbcType="VARCHAR" property="country"/>
+        <result column="TELEPHONE_ONE" jdbcType="VARCHAR" property="telephoneOne"/>
+        <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+        <result column="FAX" jdbcType="VARCHAR" property="fax"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="thumbnail"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+        <result column="FK_DOCUMENT" jdbcType="VARCHAR" property="fkDocument"/>
+        <result column="CREATED_USER" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="VARCHAR" property="createdDate"/>
+    </resultMap>
+    <select id="findAllDriver" resultMap="driverList">
+    SELECT *,
+    (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = DRIVER.CREATED_BY LIMIT 1 ) AS CREATED_USER
+    FROM MASTER_DRIVER DRIVER
+    LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = DRIVER.FK_DOCUMENT
+    ORDER BY DRIVER.FULL_NAME ASC
+    </select>
+    <select id="findAllActiveDrivers" resultMap="driverList">
+    SELECT *,
+    (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = DRIVER.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+    FROM MASTER_DRIVER DRIVER
+    LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = DRIVER.FK_DOCUMENT
+    WHERE DRIVER.IS_ACTIVATED = 1 ORDER BY DRIVER.FULL_NAME ASC
+    </select>
+    <select id="findDriverById" resultMap="driverList"  parameterType="java.lang.Long">
+        SELECT *,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = DRIVER.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_DRIVER DRIVER
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = DRIVER.FK_DOCUMENT
+        WHERE DRIVER.IS_ACTIVATED = 1 AND DRIVER.ID=#{id}
+    </select>
+</mapper>

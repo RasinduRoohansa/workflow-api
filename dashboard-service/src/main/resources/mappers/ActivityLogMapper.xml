@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.activitylog.ActivityLogMapper">
+    <insert id="createActLog"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO ACT_LOG_QUOTE_ENQUIRY (LOG_TYPE, DESCRIPTION, CREATED_BY, FK_QUOTE_ENQUIRY)
+        VALUES (#{logType}, #{description}, #{createdBy}, #{fkQuoteEnquiry});
+    </insert>
+    <resultMap id="actLogMap" type="com.spsolutions.grand.domain.activitylog.ActivityLog">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="LOG_TYPE" jdbcType="VARCHAR" property="logType"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+
+    </resultMap>
+    <select id="findActLogByEnquiryId" resultMap="actLogMap" parameterType="java.lang.Long">
+
+        SELECT ALQE.* , (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = ALQE.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM ACT_LOG_QUOTE_ENQUIRY ALQE WHERE ALQE.FK_QUOTE_ENQUIRY = #{TYPE}
+        ORDER BY ALQE.CREATED_DATE DESC
+
+    </select>
+</mapper>

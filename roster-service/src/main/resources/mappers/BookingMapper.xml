@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.roster.RosterBookingMapper">
+
+    <resultMap id="bookingMap" type="com.spsolutions.grand.domain.booking.Booking">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="BOOKING_NUMBER" jdbcType="VARCHAR" property="bookingNumber"/>
+        <result column="FK_QTE_ENQ_WLKTHRGH" jdbcType="BIGINT" property="fkWalkThrough"/>
+
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+
+    </resultMap>
+
+
+    <resultMap id="bookingCustomMap" type="com.spsolutions.grand.dao.roster.BookingDao">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="BOOKING_NUMBER" jdbcType="VARCHAR" property="bookingNumber"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="bookingCreatedBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createDate"/>
+        <result column="CUSTOMER" jdbcType="VARCHAR" property="customer"/>
+        <result column="SALES_PERSON" jdbcType="TIMESTAMP" property="salesPerson"/>
+
+    </resultMap>
+
+
+    <select id="getAllActiveBookings" resultMap="bookingMap" parameterType="java.lang.String">
+        SELECT * FROM BOOKING WHERE IS_ACTIVATED = 1;
+    </select>
+
+
+
+    <select id="getAllActiveCustomBooking" resultMap="bookingCustomMap" parameterType="java.lang.String">
+
+        SELECT B.ID, B.BOOKING_NUMBER, B.CREATED_BY, B.CREATED_DATE,
+          (SELECT CONCAT(CUS.FIRSTNAME," ",CUS.LASTNAME) from MASTER_CUSTOMER CUS WHERE CUS.ID = QE.FK_CUSTOMER )AS CUSTOMER,
+          (SELECT CONCAT(U.FIRSTNAME," ",U.LASTNAME)     from `USER` U WHERE ID = QEA.FK_USER)                   AS SALES_PERSON
+
+        FROM BOOKING B
+
+        LEFT JOIN QUOTE_ENQUIRY_WALKTHROUGH QEW
+            ON QEW.ID = B.FK_QTE_ENQ_WLKTHRGH
+
+        LEFT JOIN QUOTE_ENQUIRY QE
+            ON QE.ID = QEW.FK_QUOTE_ENQUIRY
+
+        LEFT JOIN QUOTE_ENQUIRY_ALLOCATION QEA
+            ON QE.FK_QE_ALLOCATION = QEA.ID
+
+        WHERE B.IS_ACTIVATED = 1
+
+    </select>
+
+
+
+
+
+</mapper>

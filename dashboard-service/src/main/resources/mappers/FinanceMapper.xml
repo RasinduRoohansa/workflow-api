@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.finance.FinanceMapper">
+
+    <resultMap id="taxMap" type="com.spsolutions.grand.domain.Tax">
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="TAX_NAME" jdbcType="VARCHAR" property="taxName"/>
+        <result column="TAX_RATE" jdbcType="DECIMAL" property="taxRate"/>
+    </resultMap>
+    <select id="findSystemTax" resultMap="taxMap">
+
+        SELECT ATAX.ID, MT.TAX_NAME, ATAX.TAX_RATE FROM AUDIT_TAX ATAX
+        LEFT JOIN MASTER_TAX MT ON MT.ID = ATAX.FK_MASTER_TAX
+        WHERE ATAX.IS_ACTIVATED = 1
+
+    </select>
+
+</mapper>

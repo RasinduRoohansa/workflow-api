@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.customer.CustomerMapper">
+    <insert id="saveCustomer"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+      INSERT INTO MASTER_CUSTOMER (FIRSTNAME, LASTNAME, EMAIL, MOBILE, CREATED_BY, IS_ACTIVATED, PROVIDER, PROFILE_PIC)
+      VALUES (#{firstName}, #{lastName}, #{email}, #{mobile}, #{createdBy}, 1, #{provider}, #{profileImage});
+    </insert>
+
+
+    <resultMap id="customerMap" type="com.spsolutions.grand.domain.common.Customer">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+
+        <result column="FIRSTNAME" jdbcType="VARCHAR" property="firstName"/>
+        <result column="LASTNAME" jdbcType="VARCHAR" property="lastName"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="MOBILE" jdbcType="VARCHAR" property="mobile"/>
+
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="PROVIDER" jdbcType="VARCHAR" property="provider"/>
+        <result column="PROFILE_PIC" jdbcType="VARCHAR" property="profileImage"/>
+
+    </resultMap>
+    <select id="findCustomerById" resultMap="customerMap" parameterType="java.lang.Long">
+
+        SELECT * FROM MASTER_CUSTOMER WHERE ID = #{TYPE}
+
+    </select>
+</mapper>

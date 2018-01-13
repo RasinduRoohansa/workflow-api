@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.roster.EventEmployeeMapper">
+
+    <insert id="saveEventEmployeeMapper"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+
+
+        INSERT INTO ROSTER_EVENT_EMPLOYEE_MAP
+               (CREATED_BY, CREATED_DATE, IS_ACTIVATED, FK_BOOKING_ID, FK_USER_ID, FK_EMPLOYEE_TYPE_ID)
+        VALUES ( #{createdBy}, #{createdDate}, 1, #{eventId}, #{empID}, #{empTypeId});
+
+
+    </insert>
+
+    <resultMap id="availableEmployee" type="com.spsolutions.grand.dao.roster.AvailableEmployeeDAO">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+
+        <result column="FK_USER_ID" jdbcType="BIGINT" property="userId"/>
+        <result column="FK_EMPLOYEE_TYPE_ID" jdbcType="BIGINT" property="employeeTypeId"/>
+        <result column="EMP_TYPE" jdbcType="VARCHAR" property="empType"/>
+        <result column="USER_NAME" jdbcType="VARCHAR" property="userName"/>
+
+
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="isActive"/>
+
+
+    </resultMap>
+
+    <select id="getAllSelectedEmployees" resultMap="availableEmployee" parameterType="java.util.Map">
+        SELECT EMP.ID, EMP.CREATED_BY, EMP.CREATED_DATE, EMP.IS_ACTIVATED,
+
+    (SELECT FK_USER_ID FROM ROSTER_EMPLOYEE RE
+     WHERE RE.FK_EMPLOYEE_TYPE_ID = EMP.FK_EMPLOYEE_TYPE_ID
+     AND   RE.FK_EMPLOYEE_ID = EMP.ID LIMIT 1) AS USER_ID,
+
+    EMP.FK_EMPLOYEE_TYPE_ID,
+
+    (SELECT T.EMP_TYPE FROM ROSTER_EMPLOYEE_TYPE T WHERE T.ID = EMP.FK_EMPLOYEE_TYPE_ID) AS EMP_TYPE,
+    EMP.FULL_NAME  AS USER_NAME
+
+        FROM MASTER_EMPLOYEE EMP
+
+    INNER JOIN ROSTER_EVENT_EMPLOYEE_MAP EEM
+        ON EEM.FK_EMPLOYEE_ID = EMP.ID
+
+        WHERE -- (EEM.FK_EMPLOYEE_ID IS NULL OR EEM.IS_ACTIVATED = 0)
+    EMP.IS_ACTIVATED = 1
+        AND EMP.FK_EMPLOYEE_TYPE_ID = #{idEmTyp} AND EEM.FK_BOOKING_ID = #{idbooking}
+
+    </select>
+
+</mapper>

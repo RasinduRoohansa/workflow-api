@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.event.WalkthroughMapper">
+    <insert id="mapEnquiryWalkthroughTemplate"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO QUOTE_ENQUIRY_WALKTHROUGH (FK_QUOTE_ENQUIRY, FK_QUESTION_TEMPLATE, IS_ACTIVATED, CREATED_BY, IS_CURRENT)
+        VALUES (#{fkQuoteEnquiry}, #{fkQuestionTemplate}, 1, #{createdBy}, 1);
+    </insert>
+    <insert id="saveQuestionAnswer"
+            useGeneratedKeys="true"
+            parameterType="java.util.Map">
+        INSERT INTO QUOTE_ANSWER (FK_QTE_ENQ_WLKTHRGH, FK_QSTIN_TMPLT_ITM, ANSWER, ANSWER_HEADLINE, FK_QSTIN_SNGL_OPTIN)
+        VALUES (#{fkQuoteEnquiryWalkthrough}, #{fkQuestionTemplateItem}, #{answer}, #{answerHeadline}, #{fkQuestionSingleOption});
+    </insert>
+    <insert id="updateFkWalkThroughId"
+            parameterType="java.util.Map">
+        UPDATE QUOTE_ENQUIRY SET FK_QTE_ENQ_WALKTHROUGH = #{fkWalkThrough} WHERE (ID=#{enquiryId});
+    </insert>
+
+    <resultMap id="walkthroughMap" type="com.spsolutions.grand.domain.enquiry.Walkthrough">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_QUOTE_ENQUIRY" jdbcType="BIGINT" property="fkQuoteEnquiry"/>
+        <result column="FK_QUESTION_TEMPLATE" jdbcType="BIGINT" property="fkQuestionTemplate"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="VARCHAR" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="IS_CURRENT" jdbcType="BIT" property="current"/>
+
+    </resultMap>
+    <select id="findWalkthroughByEnquiryId" resultMap="walkthroughMap" parameterType="java.lang.Long">
+
+        SELECT QEW.* FROM QUOTE_ENQUIRY QE, QUOTE_ENQUIRY_WALKTHROUGH QEW
+        WHERE QE.FK_QTE_ENQ_WALKTHROUGH = QEW.ID
+        AND QE.ID = #{TYPE}
+
+    </select>
+
+
+    <resultMap id="answerMap" type="com.spsolutions.grand.dao.QuoteAnswer">
+
+        <result column="ICON" jdbcType="VARCHAR" property="icon"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="QUESTION" jdbcType="VARCHAR" property="question"/>
+        <result column="ANSWER" jdbcType="VARCHAR" property="answer"/>
+        <result column="ANSWER_HEADLINE" jdbcType="VARCHAR" property="answerHeadline"/>
+        <result column="OPTION_ANSWER" jdbcType="VARCHAR" property="optionAnswer"/>
+
+    </resultMap>
+    <select id="findQuestionAnswer" resultMap="answerMap" parameterType="java.lang.Long">
+
+        SELECT QT.ICON, QT.CODE, QTI.QUESTION , QA.ANSWER , QA.ANSWER_HEADLINE , QSO.NAME AS OPTION_ANSWER FROM QUOTE_ANSWER QA
+        LEFT JOIN QUESTION_TEMPLATE_ITEM QTI ON QA.FK_QSTIN_TMPLT_ITM = QTI.ID
+        LEFT JOIN QUESTION_TYPE QT ON QTI.FK_QUESTION_TYPE = QT.ID
+        LEFT JOIN QUESTION_SINGLE_OPTION QSO ON QSO.ID = QA.FK_QSTIN_SNGL_OPTIN
+        WHERE QA.FK_QTE_ENQ_WLKTHRGH = #{TYPE}
+        ORDER BY QA.CREATED_DATE ASC
+
+    </select>
+
+</mapper>

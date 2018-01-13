@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.event.EventMapper">
+    <insert id="saveEnquiry"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO QUOTE_ENQUIRY (START_DATE, END_DATE, PAX, DESCRIPTION, FK_EVENT_TYPE, FK_CUSTOMER, CREATED_BY, FK_VENUE_SPACE, IS_ACTIVATED, HEAR_FROM , ENQ_STATUS)
+        VALUES (#{startDate}, #{endDate}, #{pax}, #{description}, #{fkEventType}, #{fkCustomer}, #{createdBy}, #{fkVenueSpace}, 1 , #{hearFrom} , 2);
+    </insert>
+    <insert id="saveWalkThroughSetup"
+            parameterType="java.util.Map">
+        INSERT INTO QUOTE_ENQUIRY_WALKTHROUGH_SETUP (FK_GOOGLE_LOCATION, FK_CALENDAR,
+        FK_QUOTE_ENQUIRY, MESSAGE, PICKUP_TIME, CREATED_BY, IS_ACTIVATED) VALUES (
+        #{fkLocation}, #{fkCalendar}, #{fkEnquiry}, #{message}, #{time}, #{createdBy}, 1);
+    </insert>
+    <insert id="saveEnquiryAllocation"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO QUOTE_ENQUIRY_ALLOCATION (FK_USER, FK_QUOTE_ENQUIRY, CREATED_BY)
+        VALUES (#{fkUser}, #{fkEnquiry}, #{createdBy});
+    </insert>
+    <insert id="allocateEnquiry"
+            parameterType="java.util.Map">
+        UPDATE QUOTE_ENQUIRY SET IS_ALLOCATED=1, FK_QE_ALLOCATION=#{id}, ENQ_STATUS = 3 WHERE (ID=#{fkEnquiry});
+    </insert>
+
+    <insert id="deactivateWalkThroughSetup"
+            parameterType="java.util.Map">
+        UPDATE QUOTE_ENQUIRY_WALKTHROUGH_SETUP SET IS_ACTIVATED = 0
+        WHERE ( FK_QUOTE_ENQUIRY = #{TYPE} );
+    </insert>
+
+    <insert id="updateEnquiryStatus"
+            parameterType="java.util.Map">
+        UPDATE QUOTE_ENQUIRY SET ENQ_STATUS=#{status} WHERE (ID=#{id});
+    </insert>
+    <insert id="saveClientStory"
+            parameterType="java.util.Map">
+        UPDATE QUOTE_ENQUIRY SET CLIENT_STORY = #{clientStory},
+        IS_CLIENT_STORY_ADDED=1 WHERE (ID=#{fkEnquiryId});
+    </insert>
+
+    <insert id="changeEnquiryToProcessed"
+            parameterType="java.util.Map">
+        UPDATE QUOTE_ENQUIRY SET IS_PROCESSED = 1 , ENQ_STATUS = 4 WHERE (FK_QTE_ENQ_WALKTHROUGH=#{TYPE});
+    </insert>
+
+    <resultMap id="walkthroughMap" type="com.spsolutions.grand.dao.WalkThroughTime">
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_GOOGLE_LOCATION" jdbcType="BIGINT" property="fkLocation"/>
+        <result column="FK_CALENDAR" jdbcType="BIGINT" property="fkCalendar"/>
+        <result column="FK_QUOTE_ENQUIRY" jdbcType="BIGINT" property="fkEnquiry"/>
+        <result column="MESSAGE" jdbcType="VARCHAR" property="message"/>
+        <result column="PICKUP_TIME" jdbcType="TIME" property="time"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="START_DATE" jdbcType="TIMESTAMP" property="calendar.startDate"/>
+        <result column="END_DATE" jdbcType="TIMESTAMP" property="calendar.endDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="PAX" jdbcType="INTEGER" property="enquiry.pax"/>
+        <result column="FIRSTNAME" jdbcType="VARCHAR" property="enquiry.customer.firstName"/>
+        <result column="LASTNAME" jdbcType="VARCHAR" property="enquiry.customer.lastName"/>
+        <result column="PROFILE_PIC" jdbcType="VARCHAR" property="enquiry.customer.profileImage"/>
+        <result column="URL" jdbcType="VARCHAR" property="location.url"/>
+        <result column="ADDRESS" jdbcType="VARCHAR" property="location.address"/>
+
+        <result column="LAT" jdbcType="INTEGER" property="location.lat"/>
+        <result column="LNG" jdbcType="INTEGER" property="location.lng"/>
+    </resultMap>
+    <select id="findLatestWalkthrough" resultMap="walkthroughMap" parameterType="java.lang.Integer">
+        SELECT QEWS.* ,
+        QE.PAX,
+        MC.FIRSTNAME, MC.LASTNAME, MC.PROFILE_PIC,
+        EGL.URL , EGL.ADDRESS,
+		EC.START_DATE, EC.END_DATE, EGL.LAT, EGL.LNG,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QEWS.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM QUOTE_ENQUIRY_WALKTHROUGH_SETUP QEWS
+        LEFT JOIN QUOTE_ENQUIRY QE ON QE.ID = QEWS.FK_QUOTE_ENQUIRY
+        LEFT JOIN MASTER_CUSTOMER MC ON MC.ID = QE.FK_CUSTOMER
+        LEFT JOIN EDGE_GOOGLE_LOCATION EGL ON EGL.ID = QEWS.FK_GOOGLE_LOCATION
+        LEFT JOIN EDGE_CALENDAR EC ON EC.ID = QEWS.FK_CALENDAR
+        WHERE QEWS.IS_ACTIVATED = 1
+        LIMIT #{TYPE}
+    </select>
+    <select id="findReserveTimeWalkThrough" resultMap="walkthroughMap" parameterType="java.lang.Long">
+        SELECT QEWS.* ,
+        QE.PAX,
+        MC.FIRSTNAME, MC.LASTNAME, MC.PROFILE_PIC,
+        EGL.URL , EGL.ADDRESS,
+		EC.START_DATE, EC.END_DATE, EGL.LAT, EGL.LNG,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QEWS.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM QUOTE_ENQUIRY_WALKTHROUGH_SETUP QEWS
+        LEFT JOIN QUOTE_ENQUIRY QE ON QE.ID = QEWS.FK_QUOTE_ENQUIRY
+        LEFT JOIN MASTER_CUSTOMER MC ON MC.ID = QE.FK_CUSTOMER
+        LEFT JOIN EDGE_GOOGLE_LOCATION EGL ON EGL.ID = QEWS.FK_GOOGLE_LOCATION
+        LEFT JOIN EDGE_CALENDAR EC ON EC.ID = QEWS.FK_CALENDAR
+        WHERE QEWS.IS_ACTIVATED = 1
+        AND QEWS.FK_QUOTE_ENQUIRY  = #{TYPE}
+        ORDER BY QEWS.ID DESC LIMIT 1
+    </select>
+
+
+    <resultMap id="locationMap" type="com.spsolutions.grand.domain.location.EdgeLocation">
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="LAT" jdbcType="DECIMAL" property="lat"/>
+        <result column="LNG" jdbcType="DECIMAL" property="lng"/>
+        <result column="URL" jdbcType="VARCHAR" property="url"/>
+        <result column="PLACE_ID" jdbcType="VARCHAR" property="placeId"/>
+        <result column="ADDRESS" jdbcType="VARCHAR" property="address"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+    </resultMap>
+    <select id="findWalkThroughMapLocation" resultMap="locationMap" parameterType="java.lang.Integer">
+        SELECT EGL.*,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = EGL.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM QUOTE_ENQUIRY_WALKTHROUGH_SETUP QEWS
+        LEFT JOIN EDGE_GOOGLE_LOCATION EGL ON EGL.ID = QEWS.FK_GOOGLE_LOCATION
+        WHERE QEWS.IS_ACTIVATED = 1
+        AND EGL.IS_ACTIVATED = 1
+        ORDER BY QEWS.CREATED_DATE DESC
+    </select>
+
+    <resultMap id="enquiryMap" type="com.spsolutions.grand.domain.enquiry.Enquiry">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+
+        <result column="START_DATE" jdbcType="TIMESTAMP" property="startDate"/>
+        <result column="END_DATE" jdbcType="TIMESTAMP" property="endDate"/>
+        <result column="PAX" jdbcType="INTEGER" property="pax"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="FK_EVENT_TYPE" jdbcType="BIGINT" property="fkEventType"/>
+        <result column="FK_CUSTOMER" jdbcType="BIGINT" property="fkCustomer"/>
+        <result column="IS_PROCESSED" jdbcType="BIT" property="processed"/>
+        <result column="IS_ALLOCATED" jdbcType="BIT" property="allocated"/>
+
+        <result column="EVENT_TYPE" jdbcType="VARCHAR" property="eventType"/>
+        <result column="NAME" jdbcType="VARCHAR" property="venueName"/>
+        <result column="ENQ_STATUS" jdbcType="INTEGER" property="status"/>
+
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="FK_DOCUMENT" jdbcType="VARCHAR" property="fkDocument"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="IS_CLIENT_STORY_ADDED" jdbcType="BIT" property="clientStoryAdded"/>
+
+        <result column="ALLOCATED_DATE" jdbcType="TIMESTAMP" property="allocatedDate"/>
+        <result column="ALLOCATED_BY" jdbcType="VARCHAR" property="allocatedBy"/>
+        <result column="ALLOCATED_TO" jdbcType="VARCHAR" property="allocatedTo"/>
+        <result column="ALLOCATED_TO_USERNAME" jdbcType="VARCHAR" property="allocatedToUsername"/>
+    </resultMap>
+    <select id="getEnquiry" resultMap="enquiryMap">
+
+        SELECT QE.*, MET.EVENT_TYPE, MVS.NAME, MVS.FK_DOCUMENT,
+        QEA.CREATED_DATE AS ALLOCATED_DATE, (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QEA.CREATED_BY LIMIT 1 ) AS ALLOCATED_BY,
+        CONCAT( U1.FIRSTNAME,' ',U1.LASTNAME ,' ( ',U1.USERNAME,' )') AS ALLOCATED_TO, U1.USERNAME AS
+        ALLOCATED_TO_USERNAME
+        FROM QUOTE_ENQUIRY QE LEFT JOIN QUOTE_ENQUIRY_ALLOCATION QEA ON QEA.ID = QE.FK_QE_ALLOCATION
+        LEFT JOIN USER U1 ON U1.ID = QEA.FK_USER
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = QE.FK_EVENT_TYPE
+        LEFT JOIN MASTER_VENUE_SPACE MVS ON MVS.ID = QE.FK_VENUE_SPACE
+        WHERE QE.IS_ACTIVATED = 1
+        <if test="status != null and status != 1">
+            AND QE.ENQ_STATUS = #{status}
+        </if>
+        ORDER BY QE.CREATED_DATE DESC
+
+    </select>
+    <select id="getEnquiryById" resultMap="enquiryMap" parameterType="java.lang.Long">
+
+        SELECT QE.*, MET.EVENT_TYPE, MVS.NAME, MVS.FK_DOCUMENT,
+        QEA.CREATED_DATE AS ALLOCATED_DATE, (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QEA.CREATED_BY LIMIT 1 ) AS ALLOCATED_BY,
+        CONCAT( U1.FIRSTNAME,' ',U1.LASTNAME ,' ( ',U1.USERNAME,' )') AS ALLOCATED_TO, U1.USERNAME AS ALLOCATED_TO_USERNAME
+        FROM QUOTE_ENQUIRY QE LEFT JOIN QUOTE_ENQUIRY_ALLOCATION QEA ON QEA.ID = QE.FK_QE_ALLOCATION
+        LEFT JOIN USER U1 ON U1.ID = QEA.FK_USER
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = QE.FK_EVENT_TYPE
+        LEFT JOIN MASTER_VENUE_SPACE MVS ON MVS.ID = QE.FK_VENUE_SPACE
+        WHERE QE.ID = #{TYPE}
+        ORDER BY QE.CREATED_DATE DESC
+
+    </select>
+    <select id="getAllocatedEnquiryByUsers" resultMap="enquiryMap" parameterType="java.lang.String">
+
+        SELECT QE.*, MET.EVENT_TYPE, MVS.NAME, MVS.FK_DOCUMENT
+        FROM QUOTE_ENQUIRY QE
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = QE.FK_EVENT_TYPE
+        LEFT JOIN MASTER_VENUE_SPACE MVS ON MVS.ID = QE.FK_VENUE_SPACE
+        LEFT JOIN QUOTE_ENQUIRY_ALLOCATION QEA ON QE.FK_QE_ALLOCATION = QEA.ID
+        LEFT JOIN USER U ON U.ID = QEA.FK_USER
+        WHERE QE.IS_ALLOCATED = 1 AND U.USERNAME = #{TYPE} ORDER BY QE.CREATED_DATE DESC
+
+    </select>
+
+    <select id="getEnquiryByWalkThroughId" resultMap="enquiryMap" parameterType="java.lang.Long">
+
+        SELECT QE.*, MET.EVENT_TYPE, MVS.NAME, MVS.FK_DOCUMENT,
+        QEA.CREATED_DATE AS ALLOCATED_DATE FROM QUOTE_ENQUIRY_WALKTHROUGH QEW
+        LEFT JOIN QUOTE_ENQUIRY QE ON QE.ID = QEW.FK_QUOTE_ENQUIRY
+        LEFT JOIN QUOTE_ENQUIRY_ALLOCATION QEA ON QEA.ID = QE.FK_QE_ALLOCATION
+        LEFT JOIN USER U1 ON U1.ID = QEA.FK_USER
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = QE.FK_EVENT_TYPE
+        LEFT JOIN MASTER_VENUE_SPACE MVS ON MVS.ID = QE.FK_VENUE_SPACE
+        WHERE QEW.ID = #{TYPE}
+        ORDER BY QE.CREATED_DATE DESC
+
+    </select>
+
+    <select id="findClientStory" resultType="java.lang.String" parameterType="java.lang.Long">
+
+        SELECT QE.CLIENT_STORY
+        FROM QUOTE_ENQUIRY QE
+        WHERE QE.ID = #{TYPE}
+
+    </select>
+
+    <resultMap id="availableSpacesMap" type="com.spsolutions.grand.dao.VenueSpacesDao">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="MAX_CAPACITY" jdbcType="INTEGER" property="max"/>
+        <result column="MIN_PAX" jdbcType="INTEGER" property="min"/>
+        <result column="FK_MASTER_VENUE" jdbcType="BIGINT" property="fkVenue"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="FK_DOCUMENT" jdbcType="VARCHAR" property="fkDocument"/>
+
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="altPath"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+    </resultMap>
+    <select id="findAvailableSpaces" resultMap="availableSpacesMap" parameterType="java.util.Map">
+        SELECT MVS.*, ED.ALT_PATH , ED.EXT,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MVS.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_VENUE_SPACE MVS
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MVS.FK_DOCUMENT
+        WHERE MVS.IS_ACTIVATED = 1
+    </select>
+    <insert id="saveDriverAllocation" useGeneratedKeys="true" keyProperty="id" keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO QUOTE_ENQUIRY_DRIVER_ALLOCATION (FK_ENQUIRY,FK_DRIVER,ALLOCATED_BY,ALLOCATED_DATE,ACTIVE,FK_VOUCHER)
+    VALUES(#{fkEnquiry},#{fkDriver},#{createdBy},#{createdDate},1,#{fkVoucher});
+    </insert>
+    <insert id="updateDriverAllocation"
+            parameterType="java.util.Map">
+       UPDATE QUOTE_ENQUIRY_DRIVER_ALLOCATION SET FK_ENQUIRY=#{fkEnquiry},FK_DRIVER=#{fkDriver},ALLOCATED_BY=#{createdBy},ALLOCATED_DATE=#{createdDate}
+    WHERE ID=#{id};
+    </insert>
+    <insert id="updateWalkThroughSetupForDriver"
+            parameterType="java.util.Map">
+       UPDATE QUOTE_ENQUIRY_WALKTHROUGH_SETUP SET FK_DRIVER_ALLOCATION = #{fkDriverAllocation} WHERE FK_QUOTE_ENQUIRY=#{fkEnquiry} AND IS_ACTIVATED = 1;
+    </insert>
+    <insert id="deactivateDriverAllocation"
+            parameterType="java.util.Map">
+        UPDATE QUOTE_ENQUIRY_DRIVER_ALLOCATION SET ACTIVE=0 WHERE FK_ENQUIRY=#{fkEnquiry};
+    </insert>
+    <resultMap id="allocatedDriverMap" type="com.spsolutions.grand.dao.EnquiryDriverAllocationDao">
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="START_DATE" jdbcType="TIMESTAMP" property="startDate"/>
+        <result column="END_DATE" jdbcType="TIMESTAMP" property="endDate"/>
+        <result column="PAX" jdbcType="INTEGER" property="pax"/>
+        <result column="FK_EVENT_TYPE" jdbcType="BIGINT" property="fkEventType"/>
+        <result column="FK_CUSTOMER" jdbcType="BIGINT" property="fkCustomer"/>
+        <result column="IS_PROCESSED" jdbcType="BIT" property="processed"/>
+        <result column="IS_ALLOCATED" jdbcType="BIT" property="allocated"/>
+        <result column="EVENT_TYPE" jdbcType="VARCHAR" property="eventType"/>
+        <result column="VENUE_SPACE" jdbcType="VARCHAR" property="venueName"/>
+        <result column="STATUS" jdbcType="INTEGER" property="status"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="FK_DOCUMENT" jdbcType="VARCHAR" property="fkDocument"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="ALLOCATED_DATE" jdbcType="TIMESTAMP" property="allocatedDate"/>
+        <result column="ALLOCATED_BY" jdbcType="VARCHAR" property="allocatedBy"/>
+        <result column="FK_DRIVER" jdbcType="BIGINT" property="fkDriver"/>
+        <result column="FK_DOCUMENT" jdbcType="VARCHAR" property="fkDocument"/>
+
+        <result column="FK_DRIVER_ALLOCATION" jdbcType="BIGINT" property="fkDriverAllocation"/>
+
+        <result column="PICKUP_TIME" jdbcType="TIMESTAMP" property="pickTime"/>
+        <result column="MESSAGE" jdbcType="VARCHAR" property="description"/>
+
+        <result column="CALENDAR_START_DATE" jdbcType="TIMESTAMP" property="calendar.startDate"/>
+        <result column="CALENDAR_END_DATE" jdbcType="TIMESTAMP" property="calendar.endDate"/>
+
+        <result column="GOOGLE_ADDRESS" jdbcType="VARCHAR" property="location.address"/>
+        <result column="GOOGLE_URL" jdbcType="VARCHAR" property="location.url"/>
+    </resultMap>
+    <select id="getEnquiryByIdForDriverAllocation" resultMap="allocatedDriverMap">
+        SELECT
+        QE.*, QEDA.*, QEWS.FK_DRIVER_ALLOCATION, QEWS.PICKUP_TIME,QEWS.MESSAGE, CONCAT(MVS.NAME,', ',MV.VENUE_NAME) AS VENUE_SPACE,
+        EC.START_DATE AS CALENDAR_START_DATE, EC.END_DATE AS CALENDAR_END_DATE,
+        EGL.ADDRESS AS GOOGLE_ADDRESS , EGL.URL AS GOOGLE_URL
+        FROM
+        QUOTE_ENQUIRY QE
+        LEFT JOIN QUOTE_ENQUIRY_WALKTHROUGH_SETUP QEWS ON QEWS.FK_QUOTE_ENQUIRY = QE.ID
+        LEFT JOIN EDGE_CALENDAR EC ON EC.ID = QEWS.FK_CALENDAR
+        LEFT JOIN EDGE_GOOGLE_LOCATION EGL ON EGL.ID = QEWS.FK_GOOGLE_LOCATION
+        LEFT JOIN QUOTE_ENQUIRY_DRIVER_ALLOCATION QEDA ON QEDA.ID = QEWS.FK_DRIVER_ALLOCATION
+        LEFT JOIN MASTER_VENUE_SPACE MVS ON MVS.ID = QE.FK_VENUE_SPACE
+        LEFT JOIN MASTER_VENUE MV ON MV.ID = MVS.FK_MASTER_VENUE
+        WHERE QEWS.IS_ACTIVATED = 1
+        ORDER BY QEWS.CREATED_DATE DESC
+    </select>
+    <insert id="unAllocateTransport" parameterType="java.util.Map">
+        UPDATE QUOTE_ENQUIRY_DRIVER_ALLOCATION SET ACTIVE=0,UNALLOCATED_BY=#{createdBy},UNALLOCATED_DATE=#{createdDate} WHERE FK_ENQUIRY=#{id} AND ACTIVE=1;
+    </insert>
+    <insert id="saveTransportVoucher" useGeneratedKeys="true" keyProperty="id" keyColumn="ID"
+            parameterType="com.spsolutions.grand.dao.TransportVoucherDao">
+        INSERT INTO VOUCHER (FK_SYS_ID_GENERATOR,VOUCHER_TYPE,VOUCHER_NUMBER,ACTIVE)
+        VALUES(#{fkSysIdGenerator},#{voucherType},#{voucherNumber},#{active})
+    </insert>
+</mapper>

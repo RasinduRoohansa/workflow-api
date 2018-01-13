@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.location.LocationMapper">
+    <insert id="saveLocation"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+          INSERT INTO EDGE_GOOGLE_LOCATION (LAT, LNG, ADDRESS, PLACE_ID, URL,
+          CREATED_BY, IS_ACTIVATED) VALUES (#{lat}, #{lng},
+          #{address}, #{placeId}, #{url}, #{createdBy}, 1);
+    </insert>
+</mapper>

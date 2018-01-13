@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.calendar.CalendarMapper">
+    <insert id="saveCalendar"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO EDGE_CALENDAR (TITLE, START_DATE, END_DATE, ALL_DAY, CLASS_NAME, URL,
+        USERNAME, CREATED_BY, IS_ACTIVATED, CATEGORY) VALUES (#{title},
+        #{startDate}, #{endDate}, #{allDay}, #{className}, #{url}, #{username}, #{createdBy}, 1, #{category});
+    </insert>
+
+    <resultMap id="calendarMap" type="com.spsolutions.grand.domain.calendar.EdgeCalendar">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="TITLE" jdbcType="VARCHAR" property="title"/>
+        <result column="START_DATE" jdbcType="TIMESTAMP" property="startDate"/>
+        <result column="END_DATE" jdbcType="TIMESTAMP" property="endDate"/>
+        <result column="ALL_DAY" jdbcType="BIT" property="allDay"/>
+        <result column="CLASS_NAME" jdbcType="VARCHAR" property="className"/>
+        <result column="URL" jdbcType="VARCHAR" property="url"/>
+        <result column="USERNAME" jdbcType="VARCHAR" property="username"/>
+        <result column="CATEGORY" jdbcType="VARCHAR" property="category"/>
+
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+
+    </resultMap>
+    <select id="findCalendarByUser" resultMap="calendarMap" parameterType="java.lang.String">
+
+        SELECT EC.*,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = EC.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM EDGE_CALENDAR EC
+        WHERE EC.USERNAME = #{TYPE};
+
+    </select>
+</mapper>

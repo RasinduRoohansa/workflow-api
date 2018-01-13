@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.master.PackageMapper">
+    <insert id="createPackage"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO MASTER_PACKAGE (FK_SUPPLIER, PACKAGE_NAME, CREATED_BY, IS_ACTIVATED, DESCRIPTION, UNIT_TYPE, COST, TAX_RATE, MARKUP, QTY, FK_DOCUMENT)
+        VALUES (#{fkSupplier}, #{packageName}, #{createdBy}, 1, #{description}, #{unitType}, #{cost}, #{taxRate}, #{markup}, #{qty}, #{fkDocument});
+    </insert>
+
+    <insert id="savePackageItem"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO MAPPER_PACKAGE_ITEM (FK_MASTER_PACKAGE, FK_MASTER_ITEM, IS_ACTIVATED, CREATED_BY, CREATED_DATE)
+        VALUES (#{fkMasterPackage}, #{fkMasterItem}, 1, #{createdBy}, #{createdDate});
+    </insert>
+
+
+    <insert id="saveMapperPackageTax"
+            parameterType="java.util.Map">
+        INSERT INTO MAPPER_PACKAGE_TAX (FK_AUDIT_TAX, FK_MASTER_PACKAGE, IS_ACTIVATED)
+        VALUES (#{fkTaxAudit}, #{fkPackage}, 1);
+    </insert>
+    <insert id="updatePackage" parameterType="java.util.Map">
+        UPDATE MASTER_PACKAGE SET FK_SUPPLIER = #{fkSupplier} ,
+        PACKAGE_NAME = #{packageName} ,
+        DESCRIPTION = #{description} ,
+        UNIT_TYPE = #{unitType} ,
+        COST = #{cost} ,
+        TAX_RATE = #{taxRate} ,
+        MARKUP = #{markup} ,
+        QTY = #{qty},
+        FK_DOCUMENT= #{fkDocument}
+        WHERE (ID=#{id});
+    </insert>
+
+    <insert id="addPackageToCart" parameterType="java.util.Map">
+        INSERT INTO QUOTE_PACKAGES
+        (FK_MASTER_PACKAGE, FK_QTE_ENQ_WLKTHRGH, TOTAL_COST, TAX_RATE, MARKUP, IS_ACTIVATED, CREATED_BY, QTY, QTY_TYPE, COST)
+        VALUES
+        (#{fkPackage}, #{fkWalkThrough}, #{totalCost}, #{taxRate}, #{markup}, 1, #{createdBy}, #{qty}, #{qtyType}, #{cost});
+    </insert>
+
+    <insert id="updatePackageToCart" parameterType="java.util.Map">
+        UPDATE QUOTE_PACKAGES SET
+        TOTAL_COST = #{totalCost},
+        TAX_RATE = #{taxRate},
+        MARKUP = #{markup},
+        CREATED_BY = #{createdBy},
+        QTY = #{qty},
+        COST = #{cost}
+        WHERE
+        FK_MASTER_PACKAGE = #{fkPackage} AND FK_QTE_ENQ_WLKTHRGH = #{fkWalkThrough}
+    </insert>
+
+    <resultMap id="packageMap" type="com.spsolutions.grand.domain.master.Package">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_SUPPLIER" jdbcType="BIGINT" property="fkSupplier"/>
+        <result column="PACKAGE_NAME" jdbcType="VARCHAR" property="packageName"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="UNIT_TYPE" jdbcType="VARCHAR" property="unitType"/>
+        <result column="COST" jdbcType="DECIMAL" property="cost"/>
+        <result column="TAX_RATE" jdbcType="DECIMAL" property="taxRate"/>
+        <result column="MARKUP" jdbcType="DECIMAL" property="markup"/>
+        <result column="QTY" jdbcType="DECIMAL" property="qty"/>
+
+        <result column="FK_DOCUMENT" jdbcType="BIGINT" property="fkDocument"/>
+        <result column="SUPPLIER_NAME" jdbcType="VARCHAR" property="supplier.supplierName"/>
+        <result column="CODE" jdbcType="VARCHAR" property="supplier.code"/>
+        <result column="COMPANY_NAME" jdbcType="VARCHAR" property="supplier.companyName"/>
+        <result column="STREET_ONE" jdbcType="VARCHAR" property="supplier.streetOne"/>
+        <result column="STREET_TWO" jdbcType="VARCHAR" property="supplier.streetTwo"/>
+        <result column="CITY" jdbcType="VARCHAR" property="supplier.city"/>
+        <result column="COUNTRY" jdbcType="VARCHAR" property="supplier.country"/>
+        <result column="TELEPHONE_ONE" jdbcType="VARCHAR" property="supplier.telephoneOne"/>
+        <result column="TELEPHONE_TWO" jdbcType="VARCHAR" property="supplier.telephoneTwo"/>
+        <result column="FAX" jdbcType="VARCHAR" property="supplier.fax"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="supplier.email"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="altPath"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+
+    </resultMap>
+    <select id="getAllPackages" resultMap="packageMap">
+
+        SELECT MP.*, MS.*,ED.ALT_PATH, ED.EXT,
+         (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MP.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_PACKAGE MP
+        LEFT JOIN MASTER_SUPPLIER MS ON MP.FK_SUPPLIER = MS.ID
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MP.FK_DOCUMENT
+
+    </select>
+    <select id="findPackageById" resultMap="packageMap" parameterType="java.lang.Long">
+
+        SELECT MP.*, MS.*,ED.ALT_PATH, ED.EXT,
+         (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MP.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_PACKAGE MP
+        LEFT JOIN MASTER_SUPPLIER MS ON MP.FK_SUPPLIER = MS.ID
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MP.FK_DOCUMENT
+        WHERE MP.ID = #{TYPE}
+
+    </select>
+    <select id="findPackages" resultMap="packageMap" parameterType="java.util.Map">
+
+        SELECT MP.*, MS.*,ED.ALT_PATH, ED.EXT,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MP.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_PACKAGE MP
+        LEFT JOIN MASTER_SUPPLIER MS ON MP.FK_SUPPLIER = MS.ID
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MP.FK_DOCUMENT
+        WHERE
+        MP.IS_ACTIVATED = 1
+        <if test="search != null">
+            AND MP.PACKAGE_NAME LIKE #{search}
+        </if>
+        <if test="fkItemCategory != null">
+            AND MP.ID IN (SELECT MPI.FK_MASTER_PACKAGE
+            FROM MAPPER_PACKAGE_ITEM MPI
+            LEFT JOIN MASTER_ITEM MI ON MI.ID = MPI.FK_MASTER_ITEM
+            WHERE MI.FK_ITEM_CATEGORY = #{fkItemCategory})
+        </if>
+        AND (MP.COST BETWEEN #{from} AND #{to})
+        ORDER BY MP.COST ASC
+        LIMIT 6 OFFSET #{offset}
+    </select>
+
+    <select id="findPackagesCount" resultType="java.lang.Long" parameterType="java.util.Map">
+        SELECT COUNT(MP.ID)
+        FROM MASTER_PACKAGE MP
+        LEFT JOIN MASTER_SUPPLIER MS ON MP.FK_SUPPLIER = MS.ID
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MP.FK_DOCUMENT
+        WHERE
+        MP.IS_ACTIVATED = 1
+        <if test="search != null">
+            AND MP.PACKAGE_NAME LIKE #{search}
+        </if>
+        <if test="fkItemCategory != null">
+            AND MP.ID IN (SELECT MPI.FK_MASTER_PACKAGE
+            FROM MAPPER_PACKAGE_ITEM MPI
+            LEFT JOIN MASTER_ITEM MI ON MI.ID = MPI.FK_MASTER_ITEM
+            WHERE MI.FK_ITEM_CATEGORY = #{fkItemCategory})
+        </if>
+        AND (MP.COST BETWEEN #{from} AND #{to})
+    </select>
+
+    <select id="activatePackage" resultMap="packageMap" parameterType="java.lang.Long">
+
+        UPDATE MASTER_PACKAGE MP SET MP.IS_ACTIVATED = 1 WHERE MP.ID = #{TYPE}
+
+    </select>
+    <select id="deactivatePackage" resultMap="packageMap" parameterType="java.lang.Long">
+
+        UPDATE MASTER_PACKAGE MP SET MP.IS_ACTIVATED = 0 WHERE MP.ID = #{TYPE}
+
+    </select>
+
+
+    <resultMap id="itemPackageMap" type="com.spsolutions.grand.dao.ItemPackage">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+
+    </resultMap>
+    <select id="findItemPackage" resultMap="itemPackageMap" parameterType="java.lang.Long">
+        SELECT * FROM MAPPER_PACKAGE_ITEM MPI WHERE MPI.FK_MASTER_PACKAGE = #{fkMasterPackage} AND MPI.FK_MASTER_ITEM = #{fkMasterItem} LIMIT 1
+    </select>
+
+    <insert id="activatePackageItem" parameterType="java.lang.Long">
+        UPDATE MAPPER_PACKAGE_ITEM SET IS_ACTIVATED = 1 WHERE (ID=#{TYPE});
+    </insert>
+    <insert id="deactivatePackageItems" parameterType="java.lang.Long">
+        UPDATE MAPPER_PACKAGE_ITEM SET IS_ACTIVATED = 0 WHERE (FK_MASTER_PACKAGE=#{TYPE});
+    </insert>
+
+
+    <resultMap id="itemMap" type="com.spsolutions.grand.domain.master.Item">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="ITEM_NAME" jdbcType="VARCHAR" property="itemName"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="FK_DOCUMENT" jdbcType="VARCHAR" property="fkDocument"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="CATEGORY_NAME" jdbcType="VARCHAR" property="category"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="image"/>
+
+    </resultMap>
+    <select id="findPackageItem" resultMap="itemMap" parameterType="java.lang.Long">
+
+        SELECT MI.*, MIC.CATEGORY_NAME, ED.ALT_PATH, ED.EXT,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MI.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_ITINERARY_CATEGORY MIC, MAPPER_PACKAGE_ITEM MPI,
+        MASTER_ITEM MI LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MI.FK_DOCUMENT
+        WHERE MI.IS_ACTIVATED = 1 AND MIC.ID = MI.FK_ITEM_CATEGORY AND MPI.FK_MASTER_ITEM = MI.ID
+        AND MPI.FK_MASTER_PACKAGE = #{TYPE} AND MPI.IS_ACTIVATED = 1
+
+    </select>
+
+
+    <resultMap id="taxMap" type="com.spsolutions.grand.domain.Tax">
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="TAX_NAME" jdbcType="VARCHAR" property="taxName"/>
+        <result column="TAX_RATE" jdbcType="DECIMAL" property="taxRate"/>
+    </resultMap>
+    <select id="findPackageTaxes" resultMap="taxMap" parameterType="java.lang.Long">
+
+        SELECT ATAX.ID, MT.TAX_NAME, ATAX.TAX_RATE FROM MAPPER_PACKAGE_TAX MPT
+        LEFT JOIN AUDIT_TAX ATAX ON ATAX.ID = MPT.FK_AUDIT_TAX
+        LEFT JOIN MASTER_TAX MT ON MT.ID = ATAX.FK_MASTER_TAX
+        WHERE MPT.FK_MASTER_PACKAGE = #{TYPE}
+
+    </select>
+
+
+    <resultMap id="cartSummeryMap" type="com.spsolutions.grand.dao.cart.CartSummery">
+        <result column="TOTAL_COST" jdbcType="DECIMAL" property="total"/>
+        <result column="TAX_RATE" jdbcType="DECIMAL" property="tax"/>
+        <result column="SUB_TOTAL" jdbcType="DECIMAL" property="subTotal"/>
+        <result column="ITEM_COUNT" jdbcType="INTEGER" property="itemCount"/>
+    </resultMap>
+    <select id="findCartSummeryDetail" resultMap="cartSummeryMap" parameterType="java.lang.Long">
+
+        SELECT
+        COUNT(QP.ID) AS ITEM_COUNT,
+        SUM(QP.QTY * (QP.COST + (QP.COST * QP.MARKUP)/100) ) AS SUB_TOTAL,
+        SUM(QP.TOTAL_COST * QP.QTY) AS TOTAL_COST,
+        SUM(QP.QTY * (QP.COST * QP.TAX_RATE)/100) AS TAX_RATE
+        FROM QUOTE_PACKAGES QP
+        WHERE QP.FK_QTE_ENQ_WLKTHRGH = #{TYPE}
+
+    </select>
+
+
+    <resultMap id="cartPackageMap" type="com.spsolutions.grand.dao.cart.CartPackage">
+        <result column="FK_QTE_ENQ_WLKTHRGH" jdbcType="DECIMAL" property="fkWalkThrough"/>
+        <result column="FK_MASTER_PACKAGE" jdbcType="DECIMAL" property="fkPackage"/>
+        <result column="TOTAL_COST" jdbcType="DECIMAL" property="totalCost"/>
+        <result column="TAX_RATE" jdbcType="DECIMAL" property="taxRate"/>
+        <result column="MARKUP" jdbcType="DECIMAL" property="markup"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="QTY" jdbcType="DECIMAL" property="qty"/>
+        <result column="QTY_TYPE" jdbcType="VARCHAR" property="qtyType"/>
+        <result column="COST" jdbcType="DECIMAL" property="cost"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_DATE" jdbcType="DATE" property="createdDate"/>
+    </resultMap>
+    <select id="findCartPackageByIds" resultMap="cartPackageMap" parameterType="java.util.Map">
+
+        SELECT QP.* FROM QUOTE_PACKAGES QP
+        WHERE QP.FK_MASTER_PACKAGE = #{packageId}
+        AND QP.FK_QTE_ENQ_WLKTHRGH = #{fkWalkThrough}
+        AND QP.IS_ACTIVATED = 1
+        LIMIT 1
+
+    </select>
+
+
+    <resultMap id="cartItemPackageMap" type="com.spsolutions.grand.dao.cart.CartPackage">
+        <result column="FK_QTE_ENQ_WLKTHRGH" jdbcType="DECIMAL" property="fkWalkThrough"/>
+        <result column="FK_MASTER_PACKAGE" jdbcType="DECIMAL" property="fkPackage"/>
+        <result column="TOTAL_COST" jdbcType="DECIMAL" property="totalCost"/>
+        <result column="TAX_RATE" jdbcType="DECIMAL" property="taxRate"/>
+        <result column="MARKUP" jdbcType="DECIMAL" property="markup"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="QTY" jdbcType="DECIMAL" property="qty"/>
+        <result column="QTY_TYPE" jdbcType="VARCHAR" property="qtyType"/>
+        <result column="COST" jdbcType="DECIMAL" property="cost"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_DATE" jdbcType="DATE" property="createdDate"/>
+
+        <result column="PACKAGE_NAME" jdbcType="VARCHAR" property="packageName"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="image"/>
+        <result column="EXT" jdbcType="VARCHAR" property="ext"/>
+    </resultMap>
+    <select id="findCartPackageItems" resultMap="cartItemPackageMap" parameterType="java.util.Map">
+
+        SELECT QP.* , MP.PACKAGE_NAME, ED.ALT_PATH, ED.EXT FROM QUOTE_PACKAGES QP,
+        MASTER_PACKAGE MP
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MP.FK_DOCUMENT
+        WHERE QP.FK_MASTER_PACKAGE = MP.ID
+        AND QP.FK_QTE_ENQ_WLKTHRGH = #{TYPE}
+        AND QP.IS_ACTIVATED = 1
+
+    </select>
+</mapper>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.master.SupplierMapper">
+    <insert id="saveSupplier" parameterType="java.util.Map">
+          INSERT INTO MASTER_SUPPLIER
+          (SUPPLIER_NAME, CODE, COMPANY_NAME, STREET_ONE, STREET_TWO, CITY, COUNTRY, TELEPHONE_ONE, TELEPHONE_TWO, FAX, EMAIL, IS_ACTIVATED, CREATED_BY)
+          VALUES
+          (#{supplierName}, #{code}, #{companyName}, #{streetOne}, #{streetTwo}, #{city}, #{country}, #{telephoneOne}, #{telephoneTwo}, #{fax}, #{email}, 1, #{createdBy});
+    </insert>
+
+    <resultMap id="supplierMap" type="com.spsolutions.grand.domain.master.Supplier">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="SUPPLIER_NAME" jdbcType="VARCHAR" property="supplierName"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="COMPANY_NAME" jdbcType="VARCHAR" property="companyName"/>
+        <result column="STREET_ONE" jdbcType="VARCHAR" property="streetOne"/>
+        <result column="STREET_TWO" jdbcType="VARCHAR" property="streetTwo"/>
+        <result column="CITY" jdbcType="VARCHAR" property="city"/>
+        <result column="COUNTRY" jdbcType="VARCHAR" property="country"/>
+        <result column="TELEPHONE_ONE" jdbcType="VARCHAR" property="telephoneOne"/>
+        <result column="TELEPHONE_TWO" jdbcType="VARCHAR" property="telephoneTwo"/>
+        <result column="FAX" jdbcType="VARCHAR" property="fax"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+
+    </resultMap>
+    <select id="findAllSupplier" resultMap="supplierMap">
+
+    SELECT MS.*,
+    (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MS.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+    FROM MASTER_SUPPLIER MS ORDER BY MS.SUPPLIER_NAME ASC
+
+    </select>
+    <select id="findActiveSupplier" resultMap="supplierMap">
+
+    SELECT MS.*,
+    (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MS.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+    FROM MASTER_SUPPLIER MS WHERE MS.IS_ACTIVATED = 1 ORDER BY MS.SUPPLIER_NAME ASC
+
+    </select>
+
+    <!--<update id="updateEventType" parameterType="java.util.Map">-->
+    <!--UPDATE MASTER_EVENT_TYPE SET IS_ACTIVATED = #{activated}, EVENT_TYPE = #{eventType},-->
+    <!--CODE = #{code}, DESCRIPTION = #{description} WHERE ID = #{id}-->
+    <!--</update>-->
+</mapper>

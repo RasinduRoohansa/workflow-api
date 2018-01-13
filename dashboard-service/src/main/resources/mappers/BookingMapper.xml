@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.booking.BookingMapper">
+    <insert id="createBookingByWalkThrough"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO BOOKING (BOOKING_NUMBER, FK_QTE_ENQ_WLKTHRGH, IS_ACTIVATED, CREATED_BY, DEPOSIT_AMOUNT, START_DATE, END_DATE)
+        VALUES (#{bookingNumber}, #{fkWalkThrough}, 1, #{createdBy}, #{depositAmount}, #{startDate}, #{endDate});
+    </insert>
+    <insert id="saveTablePlan"
+            useGeneratedKeys="true"
+            parameterType="java.util.Map">
+        INSERT INTO BOOKING_TABLE_PLAN(FK_DOCUMENT, FK_BOOKING, TABLE_NUMBER, SALUTATION, FULLNAME, CONTACT)
+        VALUES (#{fkDocument}, #{fkBooking}, #{tableNumber}, #{salutation}, #{fullName}, #{contact});
+    </insert>
+
+    <insert id="createBookingCheckListTemplate"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO BOOKING_CHECKLIST_TEMPLATE( FK_BOOKING, FK_MASTER_CHECKLIST, FK_USER, IS_ACTIVATED, CREATED_BY)
+        VALUES (#{fkBooking}, #{fkMasterCheckList}, #{fkUser}, 1, #{createdBy});
+    </insert>
+
+    <insert id="createBookingCheckListTemplateItem"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO BOOKING_CHECKLIST_TEMPLATE_ITEM(FK_BOOKING_CHECKLIST, FK_MASTER_CHECKLIST_ITEM, ITEM_NAME, IS_SHEDULED, SHEDULE_TYPE, SHEDULE_MINUTE, SHEDULE_TIME, IS_ACTIVATED, CREATED_BY)
+        VALUES (#{fkBookingCheckList}, #{fkMasterCheckListItem}, #{itemName}, #{sheduled}, #{sheduleType}, #{sheduleMinute}, #{sheduleTime}, 1, #{createdBy});
+    </insert>
+
+    <insert id="deactivateBookingCheckList"
+            parameterType="java.util.Map">
+        UPDATE BOOKING_CHECKLIST_TEMPLATE SET IS_ACTIVATED = 0 WHERE FK_BOOKING = #{TYPE}
+    </insert>
+
+    <insert id="checkBookingCheckListItemDone"
+            parameterType="java.util.Map">
+        UPDATE BOOKING_CHECKLIST_TEMPLATE_ITEM SET IS_DONE = 1, DONE_TIME = NOW() WHERE ID = #{TYPE}
+    </insert>
+
+
+    <resultMap id="bookingMap" type="com.spsolutions.grand.domain.booking.Booking">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="BOOKING_NUMBER" jdbcType="VARCHAR" property="bookingNumber"/>
+        <result column="DEPOSIT_AMOUNT" jdbcType="DECIMAL" property="depositAmount"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="START_DATE" jdbcType="TIMESTAMP" property="startDate"/>
+        <result column="END_DATE" jdbcType="TIMESTAMP" property="endDate"/>
+
+        <result column="ENQUIRY_ID" jdbcType="BIGINT" property="enquiry.id"/>
+        <result column="PAX" jdbcType="INTEGER" property="enquiry.pax"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="enquiry.description"/>
+        <result column="FK_EVENT_TYPE" jdbcType="BIGINT" property="enquiry.fkEventType"/>
+        <result column="FK_VENUE_SPACE" jdbcType="BIGINT" property="enquiry.fkVenueSpace"/>
+
+        <result column="FIRSTNAME" jdbcType="VARCHAR" property="enquiry.customer.firstName"/>
+        <result column="LASTNAME" jdbcType="VARCHAR" property="enquiry.customer.lastName"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="enquiry.customer.email"/>
+        <result column="MOBILE" jdbcType="VARCHAR" property="enquiry.customer.mobile"/>
+        <result column="PROFILE_PIC" jdbcType="VARCHAR" property="enquiry.customer.profileImage"/>
+
+        <result column="EVENT_TYPE" jdbcType="VARCHAR" property="enquiry.eventType"/>
+        <result column="VENUE_SPACE" jdbcType="VARCHAR" property="enquiry.venueName"/>
+        <result column="VENUE_NAME" jdbcType="VARCHAR" property="enquiry.venue"/>
+
+    </resultMap>
+    <select id="findAllBookings" resultMap="bookingMap" parameterType="java.lang.Long">
+
+        SELECT B.*, QE.* , MC.*, QE.ID AS ENQUIRY_ID,
+        MET.EVENT_TYPE,
+        MVS.`NAME` AS VENUE_SPACE,
+             (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = B.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME,
+        MV.VENUE_NAME FROM BOOKING B
+        LEFT JOIN QUOTE_ENQUIRY_WALKTHROUGH QEW ON QEW.ID = B.FK_QTE_ENQ_WLKTHRGH
+        LEFT JOIN QUOTE_ENQUIRY QE ON QE.ID = QEW.FK_QUOTE_ENQUIRY
+        LEFT JOIN MASTER_CUSTOMER MC ON MC.ID = QE.FK_CUSTOMER
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = QE.FK_EVENT_TYPE
+        LEFT JOIN MASTER_VENUE_SPACE MVS ON MVS.ID = QE.FK_VENUE_SPACE
+        LEFT JOIN MASTER_VENUE MV ON MV.ID = MVS.FK_MASTER_VENUE
+        WHERE B.IS_ACTIVATED = 1
+        ORDER BY B.CREATED_DATE DESC
+
+    </select>
+    <select id="findNextBooking" resultMap="bookingMap">
+
+        SELECT B.*, QE.* , MC.*, QE.ID AS ENQUIRY_ID,
+        MET.EVENT_TYPE,
+        MVS.`NAME` AS VENUE_SPACE,
+             (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = B.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME,
+        MV.VENUE_NAME FROM BOOKING B
+        LEFT JOIN QUOTE_ENQUIRY_WALKTHROUGH QEW ON QEW.ID = B.FK_QTE_ENQ_WLKTHRGH
+        LEFT JOIN QUOTE_ENQUIRY QE ON QE.ID = QEW.FK_QUOTE_ENQUIRY
+        LEFT JOIN MASTER_CUSTOMER MC ON MC.ID = QE.FK_CUSTOMER
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = QE.FK_EVENT_TYPE
+        LEFT JOIN MASTER_VENUE_SPACE MVS ON MVS.ID = QE.FK_VENUE_SPACE
+        LEFT JOIN MASTER_VENUE MV ON MV.ID = MVS.FK_MASTER_VENUE
+        WHERE B.IS_ACTIVATED = 1
+        AND B.START_DATE > NOW()
+        ORDER BY B.START_DATE ASC
+        LIMIT 1
+
+    </select>
+    <select id="findBookingById" resultMap="bookingMap" parameterType="java.lang.Long">
+
+        SELECT B.*, QE.* , MC.*, QE.ID AS ENQUIRY_ID,
+        MET.EVENT_TYPE,
+        MVS.`NAME` AS VENUE_SPACE,
+                (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = B.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME,
+        MV.VENUE_NAME FROM BOOKING B
+        LEFT JOIN QUOTE_ENQUIRY_WALKTHROUGH QEW ON QEW.ID = B.FK_QTE_ENQ_WLKTHRGH
+        LEFT JOIN QUOTE_ENQUIRY QE ON QE.ID = QEW.FK_QUOTE_ENQUIRY
+        LEFT JOIN MASTER_CUSTOMER MC ON MC.ID = QE.FK_CUSTOMER
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = QE.FK_EVENT_TYPE
+        LEFT JOIN MASTER_VENUE_SPACE MVS ON MVS.ID = QE.FK_VENUE_SPACE
+        LEFT JOIN MASTER_VENUE MV ON MV.ID = MVS.FK_MASTER_VENUE
+        WHERE B.IS_ACTIVATED = 1
+        AND B.ID = #{TYPE}
+
+    </select>
+
+
+    <resultMap id="tablePlanMap" type="com.spsolutions.grand.domain.booking.BookingTablePlan">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="TABLE_NUMBER" jdbcType="VARCHAR" property="tableNumber"/>
+        <result column="SALUTATION" jdbcType="VARCHAR" property="salutation"/>
+        <result column="FULLNAME" jdbcType="VARCHAR" property="fullName"/>
+        <result column="CONTACT" jdbcType="VARCHAR" property="contact"/>
+
+    </resultMap>
+    <select id="findTablePlan" resultMap="tablePlanMap" parameterType="java.lang.Long">
+
+        SELECT BTP.* FROM BOOKING_TABLE_PLAN BTP
+        WHERE BTP.FK_DOCUMENT = #{TYPE}
+
+    </select>
+
+    <resultMap id="bookingCheckListTemplateMap" type="com.spsolutions.grand.domain.booking.BookingCheckListTemplate">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="TABLE_NUMBER" jdbcType="VARCHAR" property="tableNumber"/>
+        <result column="SALUTATION" jdbcType="VARCHAR" property="salutation"/>
+        <result column="FULLNAME" jdbcType="VARCHAR" property="fullName"/>
+        <result column="CONTACT" jdbcType="VARCHAR" property="contact"/>
+
+    </resultMap>
+    <select id="findBookingCheckListTemplate" resultMap="bookingCheckListTemplateMap" parameterType="java.lang.Long">
+
+        SELECT BCT.* FROM BOOKING_CHECKLIST_TEMPLATE BCT
+        WHERE BCT.FK_BOOKING = #{TYPE} AND BCT.IS_ACTIVATED = 1 LIMIT 1;
+
+    </select>
+
+    <resultMap id="bookingCheckListTemplateItemMap" type="com.spsolutions.grand.domain.booking.BookingCheckListTemplateItem">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_BOOKING_CHECKLIST" jdbcType="BIGINT" property="fkBookingCheckList"/>
+        <result column="FK_MASTER_CHECKLIST_ITEM" jdbcType="BIGINT" property="fkMasterCheckListItem"/>
+        <result column="ITEM_NAME" jdbcType="VARCHAR" property="itemName"/>
+        <result column="IS_SHEDULED" jdbcType="BIT" property="sheduled"/>
+        <result column="SHEDULE_TYPE" jdbcType="VARCHAR" property="sheduleType"/>
+        <result column="SHEDULE_MINUTE" jdbcType="INTEGER" property="sheduleMinute"/>
+        <result column="SHEDULE_TIME" jdbcType="TIMESTAMP" property="sheduleTime"/>
+        <result column="IS_DONE" jdbcType="BIT" property="done"/>
+        <result column="DONE_TIME" jdbcType="TIMESTAMP" property="doneTime"/>
+
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+
+    </resultMap>
+    <select id="findBookingCheckListTemplateItem" resultMap="bookingCheckListTemplateItemMap" parameterType="java.lang.Long">
+
+        SELECT BCTI.* FROM BOOKING_CHECKLIST_TEMPLATE_ITEM BCTI
+        LEFT JOIN BOOKING_CHECKLIST_TEMPLATE BCT ON BCT.ID = BCTI.FK_BOOKING_CHECKLIST
+        WHERE BCT.IS_ACTIVATED = 1
+        AND BCT.FK_BOOKING = #{TYPE}
+        AND BCTI.IS_ACTIVATED = 1
+
+    </select>
+</mapper>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.master.QuestionMapper">
+    <insert id="createQuestionItem"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO QUESTION_TEMPLATE_ITEM(FK_QUESTION_TYPE, FK_QUESTION_TEMPLATE, CREATED_BY, IS_ACTIVATED, IS_MAIN)
+        VALUES (#{fkQuestionType}, #{fkTemplate}, #{createdBy}, 1, #{main});
+    </insert>
+
+    <insert id="updateQuestionItem"
+            parameterType="java.util.Map">
+        UPDATE QUESTION_TEMPLATE_ITEM QTI SET QTI.QUESTION = #{question}
+        WHERE ID = #{id}
+    </insert>
+
+    <insert id="saveQuestionSingleOption"
+            parameterType="java.util.Map">
+        INSERT INTO QUESTION_SINGLE_OPTION(FK_QUESTION_ITEM, NAME, CREATED_BY, IS_ACTIVATED)
+        VALUES (#{fkOptionItem}, #{optionText}, #{createdBy}, 1);
+    </insert>
+
+    <insert id="updateQuestionSingleOption"
+            parameterType="java.util.Map">
+        UPDATE QUESTION_SINGLE_OPTION QSO SET QSO.NAME = #{optionText} , QSO.CREATED_BY = #{createdBy} , QSO.IS_ACTIVATED = 1
+        WHERE ID = #{id}
+    </insert>
+
+    <insert id="deactivateSingleOption"
+            parameterType="java.lang.Long">
+        UPDATE QUESTION_SINGLE_OPTION QSO SET QSO.IS_ACTIVATED = 0
+        WHERE FK_QUESTION_ITEM = #{id}
+    </insert>
+
+    <insert id="tagQuestionToOption"
+            parameterType="java.lang.Long">
+        UPDATE QUESTION_SINGLE_OPTION QSO SET QSO.FK_QUESTION_SUB_ITEM = #{questionItemId}
+        WHERE QSO.ID = #{id}
+    </insert>
+
+    <insert id="deactivateSubQuestionByOption"
+            parameterType="java.lang.Long">
+        UPDATE QUESTION_SINGLE_OPTION QSO SET QSO.FK_QUESTION_SUB_ITEM = NULL
+        WHERE QSO.ID = #{id}
+    </insert>
+
+    <resultMap id="questionMap" type="com.spsolutions.grand.domain.master.QuestionType">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="ICON" jdbcType="VARCHAR" property="icon"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+
+    </resultMap>
+    <select id="findQuestionType" resultMap="questionMap">
+
+        SELECT QT.* FROM QUESTION_TYPE QT WHERE QT.IS_ACTIVATED = 1
+
+    </select>
+
+    <resultMap id="questionItemMap" type="com.spsolutions.grand.domain.question.QuestionItem">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_QUESTION_TYPE" jdbcType="BIGINT" property="fkQuestionType"/>
+        <result column="FK_QUESTION_TEMPLATE" jdbcType="BIGINT" property="fkTemplate"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="VARCHAR" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="VARCHAR" property="activated"/>
+        <result column="IS_MAIN" jdbcType="BIT" property="main"/>
+        <result column="SUB_QEUESTION_NAME" jdbcType="VARCHAR" property="subQuestionName"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+
+        <result column="ID1" jdbcType="BIGINT" property="type.id"/>
+        <result column="NAME" jdbcType="VARCHAR" property="type.name"/>
+        <result column="ICON" jdbcType="VARCHAR" property="type.icon"/>
+        <result column="CODE" jdbcType="VARCHAR" property="type.code"/>
+        <result column="IS_ACTIVATED1" jdbcType="BIT" property="type.activated"/>
+
+    </resultMap>
+    <select id="findQuestionTypeByTemplateId" resultMap="questionItemMap" parameterType="java.lang.Long">
+
+        SELECT QTI.*, QT.*,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QTI.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM QUESTION_TEMPLATE_ITEM QTI, QUESTION_TYPE QT
+        WHERE QTI.FK_QUESTION_TYPE = QT.ID
+        AND QTI.IS_ACTIVATED = 1
+        AND QTI.FK_QUESTION_TEMPLATE = #{TYPE} AND QTI.IS_MAIN = 1 ORDER BY QTI.ITEM_ORDER ASC
+
+    </select>
+    <select id="findQuestionById" resultMap="questionItemMap" parameterType="java.lang.Long">
+
+        SELECT QTI.*, QT.*,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QTI.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM QUESTION_TEMPLATE_ITEM QTI, QUESTION_TYPE QT
+        WHERE QTI.FK_QUESTION_TYPE = QT.ID
+        AND QTI.IS_ACTIVATED = 1
+        AND QTI.ID = #{TYPE} AND QTI.IS_MAIN = 1 ORDER BY QTI.ITEM_ORDER ASC
+
+    </select>
+    <select id="findSubQuestionForOptions" resultMap="questionItemMap" parameterType="java.lang.Long">
+
+        SELECT QTI.*, QT.*, QSO.NAME AS SUB_QEUESTION_NAME , (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QTI.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM QUESTION_TYPE QT, QUESTION_TEMPLATE_ITEM QTI
+        LEFT JOIN QUESTION_SINGLE_OPTION QSO ON QSO.FK_QUESTION_SUB_ITEM = QTI.ID
+        WHERE QSO.FK_QUESTION_ITEM = #{TYPE}
+        AND QSO.IS_ACTIVATED = 1
+        AND QTI.IS_ACTIVATED = 1 AND QTI.FK_QUESTION_TYPE = QT.ID
+
+    </select>
+    <select id="findMainQuestionIdByTemplateId" resultMap="questionItemMap" parameterType="java.lang.Long">
+
+        SELECT QTI.*, QT.*, (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QTI.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM QUESTION_TYPE QT, QUESTION_TEMPLATE_ITEM QTI
+        WHERE QTI.IS_MAIN = 1
+        AND QTI.IS_ACTIVATED = 1
+        AND QTI.FK_QUESTION_TEMPLATE = #{TYPE}
+        AND QTI.FK_QUESTION_TYPE = QT.ID
+        ORDER BY QTI.ITEM_ORDER ASC
+
+    </select>
+    <select id="findSubQuestionItemByOptionId" resultMap="questionItemMap" parameterType="java.lang.Long">
+
+        SELECT QTI.*, QT.*, (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = QTI.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM QUESTION_SINGLE_OPTION QSO, QUESTION_TYPE QT, QUESTION_TEMPLATE_ITEM QTI
+        WHERE QSO.FK_QUESTION_SUB_ITEM = QTI.ID
+        AND QSO.ID = #{TYPE} AND QTI.IS_ACTIVATED = 1 AND QTI.IS_MAIN = 0
+        AND QTI.FK_QUESTION_TYPE = QT.ID
+        LIMIT 1
+
+    </select>
+
+    <resultMap id="singleOptionMap" type="com.spsolutions.grand.domain.QuestionSingleOption">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_QUESTION_ITEM" jdbcType="BIGINT" property="fkOptionItem"/>
+        <result column="FK_QUESTION_SUB_ITEM" jdbcType="BIGINT" property="fkSubQuestionItem"/>
+        <result column="NAME" jdbcType="VARCHAR" property="optionText"/>
+        <result column="IS_ACTIVATED" jdbcType="VARCHAR" property="activated"/>
+
+    </resultMap>
+    <select id="findSingleOptionByItemId" resultMap="singleOptionMap" parameterType="java.lang.Long">
+
+        SELECT QSO.* FROM QUESTION_SINGLE_OPTION QSO WHERE QSO.FK_QUESTION_ITEM = #{TYPE}
+        AND QSO.IS_ACTIVATED = 1
+        ORDER BY QSO.ID ASC
+
+    </select>
+</mapper>

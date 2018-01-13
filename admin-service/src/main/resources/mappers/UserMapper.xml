@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.UserMapper">
+
+    <resultMap id="roleDomain" type="com.spsolutions.grand.domain.Role">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="ROLE" jdbcType="VARCHAR" property="role"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+
+    </resultMap>
+    <select id="findRoleByUsername" parameterType="java.lang.String" resultMap="roleDomain">
+
+        SELECT R.* FROM MAPPER_USER_ROLE MUR, USER U, ROLE R
+        WHERE MUR.FK_USER = U.ID
+        AND R.ID = MUR.FK_ROLE
+        AND U.USERNAME = #{type}
+
+    </select>
+    <select id="findActiveRole" resultMap="roleDomain">
+
+        SELECT R.* FROM ROLE R
+
+    </select>
+
+    <resultMap id="userDomain" type="com.spsolutions.grand.domain.User">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="USERNAME" jdbcType="VARCHAR" property="username"/>
+        <result column="FIRSTNAME" jdbcType="VARCHAR" property="firstname"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="PASSWORD" jdbcType="VARCHAR" property="password"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ADMIN" jdbcType="BIT" property="admin"/>
+        <result column="IS_REGISTERED" jdbcType="BIT" property="registered"/>
+
+    </resultMap>
+    <select id="findAllUsers" resultMap="userDomain">
+        SELECT * FROM USER U
+    </select>
+    <select id="findActiveUsers" resultMap="userDomain">
+        SELECT * FROM USER U WHERE IS_ACTIVATED = 1
+    </select>
+    <select id="findUser" parameterType="java.lang.String" resultMap="userDomain">
+        SELECT * FROM USER U WHERE USERNAME = #{TYPE}
+    </select>
+    <select id="findUsersByRoleGroup" parameterType="java.lang.String" resultMap="userDomain">
+        SELECT * FROM USER U
+        WHERE U.ID IN ( SELECT U.ID FROM MAPPER_GROUP_ROLE MGR,
+        ROLE R, MAPPER_USER_ROLE MUR, USER U
+        WHERE MGR.FK_ROLE = R.ID
+        AND MUR.FK_ROLE = R.ID
+        AND MUR.FK_USER = U.ID
+        AND MGR.GROUP_CODE = #{TYPE}
+        GROUP BY U.ID)
+    </select>
+
+    <resultMap id="roleMapperDomain" type="com.spsolutions.grand.domain.MapperUserRole">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_ROLE" jdbcType="BIGINT" property="fkRole"/>
+        <result column="FK_USER" jdbcType="BIGINT" property="fkUser"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+
+    </resultMap>
+    <select id="findRoleMapper" resultMap="roleMapperDomain">
+
+        SELECT MUR.* FROM MAPPER_USER_ROLE MUR WHERE MUR.FK_ROLE = #{roleId} AND MUR.FK_USER = #{userId};
+
+    </select>
+
+    <select id="findUserRoleMapperIds" parameterType="java.lang.Long" resultType="java.lang.Long">
+
+        SELECT MUR.FK_ROLE FROM MAPPER_USER_ROLE MUR WHERE MUR.FK_USER = #{TYPE} AND MUR.IS_ACTIVATED = 1 GROUP BY MUR.FK_ROLE
+
+    </select>
+
+    <update id="activateUser" parameterType="java.lang.Long">
+        UPDATE USER SET IS_ACTIVATED = 1 WHERE ID = #{TYPE}
+    </update>
+
+    <update id="deactivateUser" parameterType="java.lang.Long">
+        UPDATE USER SET IS_ACTIVATED = 0 WHERE ID = #{TYPE}
+    </update>
+
+    <insert id="saveRole" parameterType="java.util.Map">
+        INSERT INTO ROLE(ROLE) VALUES (#{role});
+    </insert>
+
+    <insert id="saveUser" parameterType="java.util.Map">
+        INSERT INTO USER(EMAIL,USERNAME,PASSWORD,IS_ACTIVATED, IS_ADMIN, CREATED_DATE, CREATED_BY) VALUES (#{email},#{username},#{password},1, #{admin}, CURRENT_DATE, #{createdBy} );
+    </insert>
+
+    <insert id="assignRole" parameterType="java.util.Map">
+        INSERT INTO MAPPER_USER_ROLE(IS_ACTIVATED,FK_ROLE, FK_USER) VALUES (1,#{roleId}, #{userId});
+    </insert>
+
+    <update id="updateRoleAssign" parameterType="java.util.Map">
+        UPDATE MAPPER_USER_ROLE SET IS_ACTIVATED = #{status} , CREATED_DATE = CURRENT_TIMESTAMP WHERE FK_ROLE = #{roleId} AND FK_USER = #{userId}
+    </update>
+
+    <update id="updateUser" parameterType="java.util.Map">
+        UPDATE USER SET EMAIL=#{email}, FIRSTNAME=#{firstname}, LAST_PASSWORD_RESET_DATE=CURRENT_TIMESTAMP ,
+        LASTNAME=#{lastname},PASSWORD=#{password}, IS_REGISTERED=1 WHERE (ID=#{id});
+    </update>
+</mapper>

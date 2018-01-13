@@ -1,0 +1,39 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.spsolutions.grand</groupId>
+    <artifactId>the-grand</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>the-grand</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <sonar.version>2.7.1</sonar.version>
+    </properties>
+
+    <modules>
+        <module>service-registry</module>
+        <module>admin-service</module>
+        <module>dashboard-service</module>
+        <module>api-gateway</module>
+        <module>data-module</module>
+        <module>auth-service</module>
+        <module>roster-service</module>
+    </modules>
+
+    <profiles>
+        <profile>
+            <id>Sonar</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <sonar.host.url>http://108.161.135.34:9393/</sonar.host.url>
+                <sonar.login>spadmin</sonar.login>
+                <sonar.password>n0w!nspl!v3</sonar.password>
+            </properties>
+        </profile>
+    </profiles>
+
+</project>

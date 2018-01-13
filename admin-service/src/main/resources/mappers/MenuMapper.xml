@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.MenuMapper">
+
+    <resultMap id="edgeMenuItemDomain" type="com.spsolutions.grand.domain.EdgeMenuItem">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="MENU_NAME" jdbcType="VARCHAR" property="menuName"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="PRIORITY" jdbcType="DECIMAL" property="priority"/>
+        <result column="URL" jdbcType="VARCHAR" property="url"/>
+        <result column="ICON" jdbcType="VARCHAR" property="icon"/>
+
+    </resultMap>
+    <select id="findMenuItemByUsername" parameterType="java.lang.String" resultMap="edgeMenuItemDomain">
+
+        SELECT EMI.* FROM EDGE_MENU_ITEM EMI
+        WHERE EMI.ID IN (
+            SELECT ESI.FK_EDGE_MENU_ITEM FROM EDGE_SUBMENU_ITEM ESI
+						LEFT JOIN MAPPER_USER_MENU MUM ON MUM.FK_SUB_MENU_ITEM = ESI.ID
+						LEFT JOIN MAPPER_USER_ROLE MUR ON MUR.FK_ROLE = MUM.FK_ROLE
+						LEFT JOIN USER U ON U.ID = MUR.FK_USER
+						WHERE ESI.IS_ACTIVATED = 1
+						AND MUM.IS_ACTIVATED = 1
+						AND U.USERNAME = #{TYPE}
+						AND MUR.IS_ACTIVATED = 1
+						GROUP BY ESI.ID
+						ORDER BY ESI.PRIORITY ASC
+        ) OR EMI.ID IN (
+						SELECT EMI.ID FROM EDGE_MENU_ITEM EMI
+						LEFT JOIN MAPPER_USER_MENU MUM ON MUM.FK_MENU_ITEM = EMI.ID
+						LEFT JOIN MAPPER_USER_ROLE MUR ON MUR.FK_ROLE = MUM.FK_ROLE
+						LEFT JOIN USER U ON U.ID = MUR.FK_USER
+						WHERE EMI.IS_ACTIVATED = 1
+						AND MUM.IS_ACTIVATED = 1
+						AND U.USERNAME = #{TYPE}
+						AND MUR.IS_ACTIVATED = 1
+						GROUP BY EMI.ID
+						ORDER BY EMI.PRIORITY ASC
+				) AND EMI.IS_ACTIVATED = 1
+        ORDER BY EMI.PRIORITY ASC
+
+    </select>
+
+    <resultMap id="edgeSubMenuItemDomain" type="com.spsolutions.grand.dao.SubMenuDao">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="MENU_NAME" jdbcType="VARCHAR" property="menu"/>
+        <result column="URL" jdbcType="VARCHAR" property="url"/>
+        <result column="PRIORITY" jdbcType="DECIMAL" property="priority"/>
+
+    </resultMap>
+    <select id="findSubMenuItemByUsername" parameterType="java.util.Map" resultMap="edgeSubMenuItemDomain">
+
+        SELECT CONCAT('submenu',ESI.ID) AS ID ,ESI.MENU_NAME ,ESI.URL ,ESI.PRIORITY FROM EDGE_SUBMENU_ITEM ESI
+        WHERE ESI.ID IN (
+            SELECT MUM.FK_SUB_MENU_ITEM FROM MAPPER_USER_MENU MUM
+            LEFT JOIN ROLE R ON R.ID = MUM.FK_ROLE
+            WHERE (R.ID IN (
+                SELECT MUR.FK_ROLE FROM MAPPER_USER_ROLE MUR, USER U
+                WHERE MUR.FK_USER = U.ID
+                AND U.USERNAME = #{username}
+                AND MUR.IS_ACTIVATED = 1
+                GROUP BY MUR.FK_ROLE
+            )) AND MUM.IS_ACTIVATED = 1
+            AND MUM.FK_SUB_MENU_ITEM IS NOT NULL
+            AND MUM.FK_MENU_ITEM IS NULL
+        ) AND ESI.IS_ACTIVATED = 1
+        AND ESI.FK_EDGE_MENU_ITEM = #{menuId}
+        ORDER BY ESI.PRIORITY ASC
+
+    </select>
+
+
+    <resultMap id="edgeMenuDaoMap" type="com.spsolutions.grand.domain.Menu">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="MENU_NAME" jdbcType="VARCHAR" property="menu"/>
+        <result column="SELECTED" jdbcType="BIT" property="selected"/>
+
+    </resultMap>
+    <select id="findMenus" parameterType="java.lang.Long" resultMap="edgeMenuDaoMap">
+
+        SELECT EMI.ID ,EMI.MENU_NAME ,
+        (
+        SELECT IF(MUM.ID IS NULL,0,1) FROM MAPPER_USER_MENU MUM
+        WHERE MUM.FK_ROLE = #{TYPE} AND MUM.IS_ACTIVATED = 1 AND MUM.FK_MENU_ITEM = EMI.ID LIMIT 1
+        ) AS SELECTED
+        FROM EDGE_MENU_ITEM EMI
+        WHERE EMI.IS_ACTIVATED = 1 ORDER BY EMI.PRIORITY ASC
+
+    </select>
+
+    <resultMap id="submenuDaoMap" type="com.spsolutions.grand.domain.SubMenu">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="MENU_NAME" jdbcType="VARCHAR" property="menu"/>
+        <result column="SELECTED" jdbcType="BIT" property="selected"/>
+
+    </resultMap>
+    <select id="findSubMenuByMenuId" parameterType="java.util.Map" resultMap="submenuDaoMap">
+
+        SELECT ESI.* ,
+        (
+        SELECT IF(MUM.ID IS NULL,0,1) FROM MAPPER_USER_MENU MUM
+        WHERE MUM.FK_ROLE = #{roleId} AND MUM.IS_ACTIVATED = 1 AND MUM.FK_SUB_MENU_ITEM = ESI.ID LIMIT 1
+        ) AS SELECTED
+        FROM EDGE_SUBMENU_ITEM ESI WHERE ESI.FK_EDGE_MENU_ITEM = #{id} AND ESI.IS_ACTIVATED = 1 ORDER BY ESI.PRIORITY ASC
+
+    </select>
+
+
+    <insert id="assignMenuToRole" parameterType="java.util.Map">
+        INSERT INTO MAPPER_USER_MENU(IS_ACTIVATED, FK_MENU_ITEM, FK_ROLE) VALUES (1, #{menuId}, #{roleId});
+    </insert>
+    <insert id="assignSubMenuToRole" parameterType="java.util.Map">
+        INSERT INTO MAPPER_USER_MENU(IS_ACTIVATED, FK_SUB_MENU_ITEM, FK_ROLE) VALUES (1, #{submenuId}, #{roleId});
+    </insert>
+
+
+    <resultMap id="mapperRoleDaoMap" type="com.spsolutions.grand.domain.MapperMenu">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_ROLE" jdbcType="BIGINT" property="fkRole"/>
+        <result column="FK_MENU_ITEM" jdbcType="BIGINT" property="fkMenu"/>
+        <result column="FK_SUB_MENU_ITEM" jdbcType="BIGINT" property="fkSubMenu"/>
+        <result column="IS_ACTIVATED" jdbcType="BIGINT" property="activated"/>
+
+    </resultMap>
+    <select id="findMenu" parameterType="java.util.Map" resultMap="mapperRoleDaoMap">
+
+        SELECT MUM.*
+        FROM MAPPER_USER_MENU MUM
+        WHERE MUM.FK_MENU_ITEM = #{menuId} AND MUM.FK_ROLE = #{roleId}
+
+    </select>
+    <select id="findSubMenu" parameterType="java.util.Map" resultMap="mapperRoleDaoMap">
+
+        SELECT MUM.*
+        FROM MAPPER_USER_MENU MUM
+        WHERE MUM.FK_SUB_MENU_ITEM = #{submenuId} AND MUM.FK_ROLE = #{roleId}
+
+    </select>
+
+
+    <update id="updateMenuMapper" parameterType="java.util.Map">
+
+        UPDATE MAPPER_USER_MENU MUM
+        SET IS_ACTIVATED= #{activated} , FK_MENU_ITEM=#{fkMenu} , FK_SUB_MENU_ITEM= #{fkSubMenu}, FK_ROLE=#{fkRole}
+        WHERE (ID= #{id});
+
+    </update>
+
+</mapper>

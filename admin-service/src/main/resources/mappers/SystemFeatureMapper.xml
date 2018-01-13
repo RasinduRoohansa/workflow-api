@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.SystemFeatureMapper">
+
+    <select id="findAccessCode" parameterType="java.lang.String" resultType="java.lang.String">
+
+        SELECT SF.CODE FROM SYSTEM_FEATURES_ALLOCATION SFA
+        LEFT JOIN SYSTEM_FEATURES SF ON SF.ID = SFA.FK_SYSTEM_FEATURES
+        LEFT JOIN ROLE R ON SFA.FK_ROLE = R.ID
+        LEFT JOIN USER U ON SFA.FK_USER = U.ID
+        LEFT JOIN MAPPER_USER_ROLE MUR ON MUR.FK_ROLE = R.ID
+        LEFT JOIN USER U2 ON MUR.FK_USER = U2.ID
+        WHERE
+        (U.USERNAME = #{TYPE} OR U2.USERNAME = #{TYPE}) AND
+        SFA.IS_ACTIVATED = 1
+        GROUP BY SF.CODE
+
+    </select>
+
+    <resultMap id="userDomain" type="com.spsolutions.grand.domain.User">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="USERNAME" jdbcType="VARCHAR" property="username"/>
+        <result column="FIRSTNAME" jdbcType="VARCHAR" property="firstname"/>
+        <result column="EMAIL" jdbcType="VARCHAR" property="email"/>
+        <result column="PASSWORD" jdbcType="VARCHAR" property="password"/>
+        <result column="IS_ACTIVATED" jdbcType="BIT" property="activated"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="IS_ADMIN" jdbcType="BIT" property="admin"/>
+        <result column="IS_REGISTERED" jdbcType="BIT" property="registered"/>
+
+    </resultMap>
+    <select id="findUsersByAccessCodeR" resultMap="userDomain" resultType="java.lang.String">
+        SELECT U.* FROM SYSTEM_FEATURES_ALLOCATION SFA
+        LEFT JOIN SYSTEM_FEATURES SF ON SF.ID = SFA.FK_SYSTEM_FEATURES
+        LEFT JOIN ROLE R ON R.ID = SFA.FK_ROLE
+        LEFT JOIN MAPPER_USER_ROLE MUR ON MUR.FK_ROLE = R.ID
+        LEFT JOIN USER U ON U.ID = MUR.FK_USER
+        WHERE
+        SF.`CODE` = #{TYPE} AND SFA.IS_ACTIVATED = 1
+        GROUP BY SF.CODE
+    </select>
+    <select id="findUsersByAccessCodeU" resultMap="userDomain" resultType="java.lang.String">
+        SELECT U.* FROM SYSTEM_FEATURES_ALLOCATION SFA
+        LEFT JOIN SYSTEM_FEATURES SF ON SF.ID = SFA.FK_SYSTEM_FEATURES
+        LEFT JOIN USER U ON U.ID = SFA.FK_USER
+        WHERE
+        SF.`CODE` = #{TYPE} AND SFA.IS_ACTIVATED = 1
+        GROUP BY SF.CODE
+    </select>
+
+    <resultMap id="systemFeatureMap" type="com.spsolutions.grand.dao.SystemFeature">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="IS_PRIVILAGES" jdbcType="BIT" property="privileges"/>
+
+    </resultMap>
+    <select id="findSystemFeatures" resultMap="systemFeatureMap">
+        SELECT * FROM SYSTEM_FEATURES
+    </select>
+
+
+    <resultMap id="AllSystemFeatureMap" type="com.spsolutions.grand.dao.AllocatedSystemFeature">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="FK_SYSTEM_FEATURES" jdbcType="BIGINT" property="fkSystemFeatures"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="DESCRIPTION" jdbcType="VARCHAR" property="description"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="CAN_READ" jdbcType="BIT" property="read"/>
+        <result column="CAN_WRITE" jdbcType="BIT" property="write"/>
+        <result column="CAN_DELETE" jdbcType="BIT" property="delete"/>
+        <result column="CAN_UPDATE" jdbcType="BIT" property="update"/>
+        <result column="IS_PRIVILAGES" jdbcType="BIT" property="privileges"/>
+
+    </resultMap>
+    <select id="findPrivillegesByUserId" parameterType="java.lang.Long" resultMap="AllSystemFeatureMap">
+        SELECT SFA.ID, SFA.FK_SYSTEM_FEATURES,
+        SFA.CAN_READ,
+        SFA.CAN_WRITE,
+        SFA.CAN_DELETE,
+        SFA.CAN_UPDATE, SF.CODE, SF.DESCRIPTION, SF.IS_PRIVILAGES,
+        CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )') AS CREATED_BY_NAME
+        FROM SYSTEM_FEATURES_ALLOCATION SFA,
+        USER U, SYSTEM_FEATURES SF
+        WHERE SFA.FK_USER = #{TYPE}
+        AND U.ID = SFA.FK_USER
+        AND SFA.IS_ACTIVATED = 1
+        AND SFA.FK_SYSTEM_FEATURES = SF.ID
+    </select>
+
+    <select id="findPrivileges" parameterType="java.util.Map" resultMap="AllSystemFeatureMap">
+        SELECT *
+        FROM SYSTEM_FEATURES_ALLOCATION SFA
+        WHERE SFA.FK_USER = #{fkUser}
+        AND SFA.FK_SYSTEM_FEATURES = #{fkSystemFeatures} LIMIT 1
+    </select>
+
+    <insert id="savePrivileges"
+            parameterType="java.util.Map">
+        INSERT INTO SYSTEM_FEATURES_ALLOCATION (FK_SYSTEM_FEATURES, FK_ROLE, FK_USER, CAN_READ, CAN_WRITE, CAN_DELETE, CAN_UPDATE, IS_ACTIVATED)
+        VALUES (#{fkSystemFeatures}, #{fkRole}, #{fkUser},  #{read},  #{write},  #{delete},  #{update}, 1);
+    </insert>
+    <insert id="updatePrivileges"
+            parameterType="java.util.Map">
+        UPDATE SYSTEM_FEATURES_ALLOCATION SET CAN_READ=#{read}, CAN_WRITE=#{write}, CAN_DELETE=#{delete}, CAN_UPDATE=#{update}, IS_ACTIVATED=1
+        WHERE (ID=#{id});
+    </insert>
+    <delete id="deletePrivilege" parameterType="java.lang.Long">
+        DELETE FROM SYSTEM_FEATURES_ALLOCATION WHERE ID = #{TYPE}
+    </delete>
+
+</mapper>

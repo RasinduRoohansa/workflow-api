@@ -1,0 +1,43 @@
+server:
+  port: 9900
+  ssl:
+    enabled: true
+    key-alias: tomcat
+    key-store: classpath:keystore.jks
+    key-store-password: "123456"
+
+http:
+  port: 9000
+
+services:
+  auth: http://localhost:9002/login
+
+zuul:
+  prefix: /api
+  routes:
+    service-registry:
+      path: /registry/**
+      url: http://localhost:9001
+    admin-service:
+      path: /admin/**
+      url: http://localhost:9003
+    dashboard-service:
+      path: /dashboard/**
+      url: http://localhost:9004
+    auth-service:
+      path: /auth/**
+      url: http://localhost:9005
+    roster-service:
+      path: /roster/**
+      url: http://localhost:9006
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/grand
+    username: root
+    password: admin
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update

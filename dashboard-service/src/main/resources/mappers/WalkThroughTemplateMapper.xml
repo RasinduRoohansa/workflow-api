@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spsolutions.grand.mappers.master.WalkThroughTemplateMapper">
+    <insert id="createTemplate"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="ID"
+            parameterType="java.util.Map">
+        INSERT INTO MASTER_QUESTION_TEMPLATE(FK_EVENT_TYPE, NAME, CREATED_BY, IS_ACTIVATED)
+        VALUES (#{fkEventType}, #{name}, #{createdBy}, 1);
+    </insert>
+
+    <resultMap id="templateMap" type="com.spsolutions.grand.domain.master.WalkThroughTemplate">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="EVENT_TYPE" jdbcType="VARCHAR" property="eventType.eventType"/>
+        <result column="ALT_PATH" jdbcType="VARCHAR" property="eventType.thumbnail"/>
+        <result column="EXT" jdbcType="VARCHAR" property="eventType.ext"/>
+        <result column="CODE" jdbcType="VARCHAR" property="eventType.code"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+
+    </resultMap>
+    <select id="findTemplates" resultMap="templateMap">
+
+        SELECT MQT.*, MET.EVENT_TYPE, MET.CODE, ED.ALT_PATH, ED.EXT,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MQT.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_QUESTION_TEMPLATE MQT
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = MQT.FK_EVENT_TYPE
+        LEFT JOIN EDGE_DOCUMENT ED ON ED.ID = MET.FK_DOCUMENT
+
+    </select>
+
+    <resultMap id="activeTemplateMap" type="com.spsolutions.grand.domain.master.WalkThroughTemplate">
+
+        <result column="ID" jdbcType="BIGINT" property="id"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="CREATED_BY" jdbcType="VARCHAR" property="createdBy"/>
+        <result column="CREATED_DATE" jdbcType="TIMESTAMP" property="createdDate"/>
+        <result column="CREATED_BY_NAME" jdbcType="VARCHAR" property="createdByFullname"/>
+        <result column="IS_ACTIVATED" jdbcType="VARCHAR" property="activated"/>
+
+    </resultMap>
+    <select id="findActiveTemplates" resultMap="activeTemplateMap">
+
+        SELECT MQT.*, MET.EVENT_TYPE,
+        (SELECT CONCAT( U.FIRSTNAME,' ',U.LASTNAME ,' ( ',U.USERNAME,' )')
+        FROM USER U WHERE U.USERNAME = MQT.CREATED_BY LIMIT 1 ) AS CREATED_BY_NAME
+        FROM MASTER_QUESTION_TEMPLATE MQT
+        LEFT JOIN MASTER_EVENT_TYPE MET ON MET.ID = MQT.FK_EVENT_TYPE
+        WHERE MQT.FK_EVENT_TYPE = #{TYPE} AND MQT.IS_ACTIVATED = 1
+
+    </select>
+</mapper>
